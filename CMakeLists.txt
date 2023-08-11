@@ -29,5 +29,13 @@ include_directories(.)
 include_directories(${PROJECT_SOURCE_DIR}/third-party)
 include(tools/external/rapidyaml.cmake)
 include(tools/external/termcolor.cmake)
+include(tools/external/cli11.cmake)
+
+configure_file(fact/facts.yml.in ${PROJECT_SOURCE_DIR}/fact/facts.yml @ONLY)
+set(CPP_RAW_STRING_START "R\"(")
+set(CPP_RAW_STRING_END ")\"")
+configure_file(fact/facts.yml.in ${PROJECT_SOURCE_DIR}/fact/cpp-raw-string-facts.yml @ONLY)
+unset(CPP_RAW_STRING_START)
+unset(CPP_RAW_STRING_END)
 
 add_subdirectory(tools)
