@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <filesystem>
+//#include <format>
 
 #include "termcolor.hpp" // https://github.com/ikalnytskyi/termcolor
 #define RYML_SINGLE_HDR_DEFINE_NOW
@@ -156,7 +157,7 @@ struct Defines {
 };
 
 static bool check_fact(const std::string& name, Fact& fact,
-    const ryml::ConstNodeRef& defs, const Defines& dfn);
+    const ryml::ConstNodeRef& defs, const Defines& dfn, FactsMap& facts);
 
 static bool check_facts(FactsMap& facts)
 {
@@ -175,7 +176,10 @@ static bool check_facts(FactsMap& facts)
         num_checked_facts = 0;
         for (auto& fact : facts) {
             num_checked_facts +=
-                check_fact(fact.first, fact.second, defs, dfn);
+                check_fact(fact.first, fact.second, defs, dfn, facts);
+            if (!fact.second.valid) {
+                break;
+            }
         }
     } while(num_checked_facts);
 
@@ -214,12 +218,26 @@ static bool check_facts(FactsMap& facts)
     return true;
 }
 
+static void print_error(const std::string& fact_name, const std::string& error_msg)
+{
+    std::cout << termcolor::bold << termcolor::bright_red <<
+        "Error: \"" << fact_name << "\" " << error_msg <<
+        termcolor::reset << std::endl;
+}
+
+static
+bool check_fact_integrity(
+    const std::string& name,
+    Fact& fact
+);
+
 static
 bool check_fact(
     const std::string& name,
     Fact& fact,
     const ryml::ConstNodeRef& defs [[maybe_unused]],
-    const Defines& dfn
+    const Defines& dfn,
+    FactsMap& facts [[maybe_unused]]
 )
 {
     if (fact.checked or !fact.valid) {
@@ -230,11 +248,9 @@ bool check_fact(
 
     //std::cout << "name: " << name << std::endl;
     if (!root.has_child("$type")) {
-        std::cout << termcolor::bold << termcolor::bright_red <<
-            "Error: \"" << name << "\" does not have type" << root <<
-            termcolor::reset << std::endl;
+        print_error(name, "does not have type");
         fact.valid = false;
-        return false;
+        return true;
     }
 
     auto fact_type = root["$type"].val();
@@ -244,10 +260,38 @@ bool check_fact(
             "Error: \"" << name << "\" bad type " << fact_type <<
             termcolor::reset << std::endl;
         fact.valid = false;
-        return false;
+        return true;
+    }
+
+    if (fact_type == "alias") {
+        if (!root.has_child("$alias")) {
+            print_error(name, "alias does not have $alias field");
+            fact.valid = false;
+            return true;
+        }
+        auto alias_fact = root["$alias"].val();
+        std::string alias_fact_str(alias_fact.begin(), alias_fact.end());
+        if (!facts.count(alias_fact_str)) {
+            print_error(name, std::string("alias '") + alias_fact_str + "' does not exist");
+            fact.valid = false;
+            return true;
+        }
+        fact.valid = facts[alias_fact_str].valid;
+    }
+    else {
+        fact.valid = check_fact_integrity(name, fact);
     }
 
     fact.checked = true;
 
+    return true;
+}
+
+static
+bool check_fact_integrity(
+    const std::string& name [[maybe_unused]],
+    Fact& fact [[maybe_unused]]
+)
+{
     return true;
 }
