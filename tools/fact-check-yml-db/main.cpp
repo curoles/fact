@@ -11,7 +11,7 @@ static const char* fact_types [[maybe_unused]] =
 #include "fact/cpp-raw-string-facts.yml"
 ;
 
-static bool walk_yml_db_directory(const char* dirname);
+static bool check_yml_db_directory(const char* dirname);
 
 int main(int argc, char* argv[])
 {
@@ -41,35 +41,129 @@ int main(int argc, char* argv[])
     std::cout << termcolor::yellow <<
         "Check YAML files in " << dirname << termcolor::reset << std::endl;
 
-    walk_yml_db_directory(dirname);
-
-    ryml::Tree facts_defines_tree =
-        ryml::parse_in_arena(ryml::csubstr(fact_types, strlen(fact_types)));
+    if (!check_yml_db_directory(dirname)) {
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
 
-static bool check_yml_fact(const fs::path& path);
+struct Fact {
+    bool checked, valid;
+    fs::path file_path;
+    std::string contents;
+    ryml::Tree tree;
+};
 
-static bool walk_yml_db_directory(const char* dirname)
+using FactsMap = std::map<std::string, Fact>;
+
+static bool collect_yml_fact(const fs::path& path, FactsMap& facts);
+static bool check_facts(FactsMap& facts);
+
+static bool check_yml_db_directory(const char* dirname)
 {
+    FactsMap facts;
+
     for (const fs::directory_entry& dir_entry : fs::recursive_directory_iterator(dirname))
     {
         //std::cout << dir_entry << '\n';
         if (dir_entry.is_regular_file()) {
-            if (!check_yml_fact(dir_entry.path())) {
+            if (!collect_yml_fact(dir_entry.path(), facts)) {
                 return false;
             }
         }
     }
 
+    return check_facts(facts);
+}
+
+static bool collect_yml_fact(
+    const fs::path& path,
+    FactsMap& facts
+)
+{
+    std::FILE* fp = std::fopen(path.c_str(), "rb");
+    if (fp == nullptr) {
+        std::cout << termcolor::bold << termcolor::bright_red <<
+            "Error: can not open " << termcolor::bright_yellow << path <<
+            termcolor::reset << std::endl;
+        return false;
+    }
+
+    std::fseek(fp, 0, SEEK_END);
+    long sz = std::ftell(fp);
+    if (sz == 0) {
+        std::cout << termcolor::bold << termcolor::bright_red <<
+            "Error: empty file " << termcolor::bright_yellow << path <<
+            termcolor::reset << std::endl;
+        std::fclose(fp);
+        return false;
+    }
+
+    Fact fact {
+        .checked   = false,
+        .valid     = false,
+        .file_path = path,
+        .contents  = std::string(sz + 1, '\0'),
+        .tree      = ryml::Tree()
+    };
+
+    std::rewind(fp);
+    size_t ret = std::fread(fact.contents.data(), 1, sz, fp);
+    assert(ret == (size_t)sz);
+
+    std::fclose(fp);
+
+    //fact.tree = ryml::parse_in_arena(ryml::to_csubstr(fact.contents));
+    fact.tree = ryml::parse_in_place(ryml::to_substr(fact.contents));
+
+    ryml::ConstNodeRef root = fact.tree.rootref();
+
+    if (!root.is_map()) {
+        std::cout << fact.tree << std::endl <<
+            termcolor::bold << termcolor::bright_red << "Error: not a map " <<
+            termcolor::reset << std::endl;
+        return false;
+    }
+
+    if (!root.has_child("name")) {
+        std::cout << fact.tree << std::endl <<
+            termcolor::bold << termcolor::bright_red << "Error: has no \"name\" " <<
+            termcolor::reset << std::endl;
+        return false;
+    }
+
+    auto name = root["name"].val();
+
+    //std::cout << "add '" << name << "'" << std::endl;
+    facts[std::string(name.begin(), name.end())] = fact;
+
     return true;
 }
 
-static bool check_yml_fact(const fs::path& path [[maybe_unused]])
+static bool check_fact(const std::string& name, Fact& fact, ryml::ConstNodeRef& defs);
+
+static bool check_facts(FactsMap& facts)
 {
-    //std::string contents = file_get_contents<std::string>(filename);
-    //ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(contents));
+    ryml::Tree defs_tree =
+        ryml::parse_in_arena(ryml::csubstr(fact_types, strlen(fact_types)));
+    ryml::ConstNodeRef defs = defs_tree.rootref();
+
+    for (auto& fact : facts) {
+        check_fact(fact.first, fact.second, defs);
+    }
+
+    return true;
+}
+
+static
+bool check_fact(
+    const std::string& name [[maybe_unused]],
+    Fact& fact [[maybe_unused]],
+    ryml::ConstNodeRef& defs [[maybe_unused]]
+)
+{
+    //std::cout << "name: " << name << std::endl;
 
     return true;
 }

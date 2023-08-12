@@ -1,3 +1,3 @@
-@CPP_RAW_STRING_START@
+@FILE_FIRST_LINE@
 - types: [axiom, regular]
-@CPP_RAW_STRING_END@
+@FILE_LAST_LINE@
