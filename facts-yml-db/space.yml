@@ -1,0 +1,4 @@
+$name: space
+$type: axiom
+$parameters:
+  num_dimensions: uint

@@ -2,4 +2,7 @@ $name: physical_universe
 $type: regular
 $brief: all of space and time and their contents
 has: time
-has: space
+has:
+  $name: space
+  $parameters:
+    num_dimensions: 3

@@ -228,7 +228,8 @@ static void print_error(const std::string& fact_name, const std::string& error_m
 static
 bool check_fact_integrity(
     const std::string& name,
-    Fact& fact
+    Fact& fact,
+    FactsMap& facts
 );
 
 static
@@ -237,12 +238,14 @@ bool check_fact(
     Fact& fact,
     const ryml::ConstNodeRef& defs [[maybe_unused]],
     const Defines& dfn,
-    FactsMap& facts [[maybe_unused]]
+    FactsMap& facts
 )
 {
     if (fact.checked or !fact.valid) {
         return false;
     }
+
+    fact.checked = true;
 
     ryml::ConstNodeRef root = fact.tree.rootref();
 
@@ -270,7 +273,7 @@ bool check_fact(
             return true;
         }
         auto alias_fact = root["$alias"].val();
-        std::string alias_fact_str(alias_fact.begin(), alias_fact.end());
+        const std::string alias_fact_str(alias_fact.begin(), alias_fact.end());
         if (!facts.count(alias_fact_str)) {
             print_error(name, std::string("alias '") + alias_fact_str + "' does not exist");
             fact.valid = false;
@@ -279,19 +282,93 @@ bool check_fact(
         fact.valid = facts[alias_fact_str].valid;
     }
     else {
-        fact.valid = check_fact_integrity(name, fact);
+        fact.valid = check_fact_integrity(name, fact, facts);
     }
-
-    fact.checked = true;
 
     return true;
 }
 
 static
+bool check_dependee_with_params(
+    const std::string& depender_name,
+    ryml::ConstNodeRef const& dependee,
+    FactsMap& facts
+);
+
+static
 bool check_fact_integrity(
-    const std::string& name [[maybe_unused]],
-    Fact& fact [[maybe_unused]]
+    const std::string& name,
+    Fact& fact,
+    FactsMap& facts
 )
 {
+    ryml::ConstNodeRef root = fact.tree.rootref();
+
+    for (ryml::ConstNodeRef const& child : root.children()) {
+        auto other = child.key();
+        if (other.empty() or other[0] == '$' or other[0] == '\0') {
+            continue;
+        }
+        const std::string other_key(other.begin(), other.end());
+        if (facts.count(other_key) == 0) {
+            print_error(name, std::string("key fact '") + other_key + "' does not exist");
+            return false;
+        }
+        if (child.has_val()) {
+            other = child.val();
+            const std::string other_val(other.begin(), other.end());
+            if (facts.count(other_val) == 0) {
+                print_error(name, std::string("val fact '") + other_val + "' does not exist");
+                return false;
+            }
+        }
+        else if (!child.is_map()) {
+            print_error(name, std::string("val fact not val and not map"));
+            return false;
+        }
+        else {
+            if (!check_dependee_with_params(name, child, facts)) {
+                return false;
+            }
+        }
+    }
+
+    //if need re-check fact.checked = false;
+    return true;
+}
+
+static
+bool check_dependee_with_params(
+    const std::string& depender_name,
+    ryml::ConstNodeRef const& dependee,
+    FactsMap& facts
+)
+{
+    if (!dependee.has_child("$name")) {
+        print_error(depender_name, "dependee does not have $name");
+        return false;
+    }
+    auto s = dependee["$name"].val();
+    const std::string dependee_name(s.begin(), s.end());
+    if (facts.count(dependee_name) == 0) {
+        print_error(depender_name, std::string("fact '") + dependee_name + "' does not exist");
+        return false;
+    }
+    if (dependee.has_child("$parameters")) {
+        const Fact& dependee_fact_ = facts[dependee_name];
+        ryml::ConstNodeRef dependee_fact = dependee_fact_.tree.rootref();
+        if (!dependee_fact.has_child("$parameters")) {
+            print_error(dependee_name, "does not have parameters");
+            return false;
+        }
+        for (ryml::ConstNodeRef const& param : dependee["$parameters"].children()) {
+            s = param.key();
+            const std::string param_name(s.begin(), s.end());
+            if (!dependee_fact["$parameters"].has_child(s)) {
+                print_error(dependee_name, "does not have parameter " + param_name);
+            }
+        }
+    }
+
     return true;
 }
