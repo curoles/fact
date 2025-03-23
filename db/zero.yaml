@@ -1,0 +1,4 @@
+zero:
+  is: [number]
+  where:
+    - number.val: 0

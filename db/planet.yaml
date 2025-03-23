@@ -1,0 +1,3 @@
+planet:
+  is: [idea]
+  has: [name, mass]
