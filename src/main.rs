@@ -1,7 +1,8 @@
 use std::fs;
 use std::path;
 use std::env;
-use yaml_rust::{YamlLoader};//, yaml};
+
+use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
 //https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
 
@@ -10,37 +11,35 @@ fn main() {
 
     let args: Vec<_> = env::args().collect();
 
-    let path = env::current_dir().expect("Can't show current directory");
-    println!("The current directory is {}", path.display());
-
     let fact_name = if args.len() <= 1 {"string"} else {args[1].as_str()};
-
 	println!("Fact name is '{}'", fact_name);
+
     let search_path = if args.len() <= 2 {None} else {Some(args[2].as_str())};
-	find_fact_file(fact_name, search_path);
+	let file_path = find_fact_file(fact_name, search_path);
 
-    let file_name = format!("db/{fact_name}.yaml");
+    if file_path.is_none() {
+        println!("Can't find file for '{}'", fact_name);
+        return;
+    }
 
-    assert!(fs::exists(&file_name).expect("Can't find file"));
+    let file_path = file_path.unwrap();
 
-    let file_contents: String = fs::read_to_string(file_name).expect("Can't read file");
+    let docs = read_fact_file(&file_path).unwrap();
 
-    let docs = YamlLoader::load_from_str(&file_contents).unwrap();
     let data = &docs[0];
 
-    println!("{:?}", data);
-    println!("{:?}", data[fact_name]);
-    //let fact_map: &yaml::Hash = data.into();
-    //for (k, v) in *data {
-    //    println!("{:?} -> {:?}", k, v);
-    //}
+    process_fact(fact_name, data);
+
 }
 
-fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::PathBuf> {
+fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::PathBuf>
+{
     let search_path =
     match path_option {
         None => {
-            let current_path = env::current_dir().expect("Can't get current directory");
+            let current_path = env::current_dir()
+            .expect("Can't get current directory");
+
             current_path.to_str().unwrap().to_owned() + "/db"
         }
         Some(path_str) => {
@@ -62,11 +61,34 @@ fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::Pa
             let file_name_n = &file_name[..fact_name.len()];
             //println!("{:?}", file_name_n);
             if file_name_n == fact_name {
-                println!("Found file for '{}' in {:?}", fact_name, path);
+                println!("Found file for '{}' as {:?}", fact_name, path);
                 return Some(path);
             }
         }
     }
 
     return None;
+}
+
+fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::error::Error>>
+{
+    assert!(fs::exists(&file_path).expect("Can't find file"));
+
+    let file_contents: String =
+        fs::read_to_string(&file_path)
+        .expect("Can't read file");
+
+    let docs = YamlLoader::load_from_str(&file_contents)?;
+
+    Ok(docs)
+}
+
+fn process_fact(fact_name: &str, data: &Yaml)
+{
+    println!("{:?}", data);
+    println!("{:?}", data[fact_name]);
+    //let fact_map: &yaml::Hash = data.into();
+    //for (k, v) in *data {
+    //    println!("{:?} -> {:?}", k, v);
+    //}
 }
