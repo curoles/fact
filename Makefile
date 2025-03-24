@@ -9,7 +9,7 @@ release:
 
 .PHONY: run
 run:
-	cargo run
+	cargo run $(ARGS)
 
 .PHONY: test
 test:
