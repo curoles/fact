@@ -6,6 +6,7 @@ use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
 //https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
 
+mod kg;
 
 fn main() {
 
@@ -67,15 +68,15 @@ fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::Pa
         }
     }
 
-    return None;
+    None
 }
 
 fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::error::Error>>
 {
-    assert!(fs::exists(&file_path).expect("Can't find file"));
+    assert!(fs::exists(file_path).expect("Can't find file"));
 
     let file_contents: String =
-        fs::read_to_string(&file_path)
+        fs::read_to_string(file_path)
         .expect("Can't read file");
 
     let docs = YamlLoader::load_from_str(&file_contents)?;
