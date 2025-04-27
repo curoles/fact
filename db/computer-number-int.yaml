@@ -1,3 +1,0 @@
-computer-number-int:
-  is: [int]
-  has: [computer-width-bits]

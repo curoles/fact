@@ -1,5 +1,0 @@
-planet-earth:
-  is: [planet]
-  where:
-    - planet.name.val: Earth
-    - planet.mass.val: 123.56

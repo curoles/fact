@@ -1,4 +1,0 @@
-i32:
-  is: [computer-number-int]
-  where:
-    - computer-number-int.computer-width-bits.number.val: 0
