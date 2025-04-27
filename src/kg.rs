@@ -12,17 +12,19 @@ static NODE_MAP: Mutex<HashMap<String, String, BuildHasherDefault<DefaultHasher>
 
 
 fn register_node(name: String, builder: String) {
-    println!("---- register: {name}");
+    println!("---- register: {name}, {builder}");
     NODE_MAP.lock().unwrap().insert(name, builder);
 }
 
 #[macro_export]
 macro_rules! register {
-    ($fn_name:ident, $node_name:expr, $node_builder:expr) => {
+    ($registration_fn_name:ident, $yaml_file:literal) => {
         use $crate::kg::{register_ctor, register_node};
         #[register_ctor]
-        fn $fn_name() {
-            register_node($node_name, $node_builder);
+        fn $registration_fn_name() {
+            let this_file = file!();
+            let yaml_string = include_str!($yaml_file);
+            register_node(this_file.to_string(), yaml_string.to_string());
         }
     };
 }
