@@ -1,19 +1,33 @@
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, DefaultHasher};
 use std::sync::Mutex;
+use yaml_rust::{YamlLoader, Yaml};
 pub use ctor_bare::register_ctor;
 
 mod str;
 mod num;
 
+#[allow(dead_code)]
+struct Node {
+    name: &'static str,
+    yaml: &'static str,
+    data: Yaml    
+}
+
+type NodeMap = Mutex<HashMap<String, Node, BuildHasherDefault<DefaultHasher>>>;
+
 // https://doc.rust-lang.org/std/collections/struct.HashMap.html
-static NODE_MAP: Mutex<HashMap<String, String, BuildHasherDefault<DefaultHasher>>> =
+static NODE_MAP: NodeMap =
     Mutex::new(HashMap::with_hasher(BuildHasherDefault::new()));
 
 
-fn register_node(name: String, builder: String) {
-    println!("---- register: {name}, {builder}");
-    NODE_MAP.lock().unwrap().insert(name, builder);
+fn register_node(name: &'static str, yaml: &'static str) {
+    println!("register: {name}\n{yaml}");
+    let docs = YamlLoader::load_from_str(yaml).unwrap();
+    let data = docs[0].clone();
+    let node = Node {name, yaml, data};
+    println!("{:?}", node.data);
+    NODE_MAP.lock().unwrap().insert(name.to_string(), node);
 }
 
 #[macro_export]
@@ -22,33 +36,26 @@ macro_rules! register {
         use $crate::kg::{register_ctor, register_node};
         #[register_ctor]
         fn $registration_fn_name() {
-            let this_file = file!();
+            let this_file = &file!()[4 .. (file!().len() - 3)];
             let yaml_string = include_str!($yaml_file);
-            register_node(this_file.to_string(), yaml_string.to_string());
+            register_node(this_file, yaml_string);
         }
     };
 }
 
+
 #[allow(dead_code)]
-trait Node {
+impl Node {
 
-    // `Self` refers to the implementor type.
-    fn new() -> Self;
+    fn name(&self) -> &'static str {
+        self.name
+    }
+
+    fn yaml(&self) -> &'static str {
+        self.yaml
+    }
     
-    // Like new() but returns trait
-    fn create() -> impl Node;
-
-    /*fn create() -> impl Node {
-        let node = Self::new();
-        node
-    }*/
-
-    // Method signatures; these will return a string.
-    //fn name(&self) -> &'static str;
-    //fn noise(&self) -> &'static str;
-
-    // Traits can provide default method definitions.
-    //fn talk(&self) {
-    //    println!("{} says {}", self.name(), self.noise());
-    //}
+    fn get_map() -> &'static NodeMap {
+        &NODE_MAP
+    }
 }

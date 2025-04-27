@@ -10,6 +10,7 @@ mod kg;
 
 fn main() {
 
+/*
     let args: Vec<_> = env::args().collect();
 
     let fact_name = if args.len() <= 1 {"string"} else {args[1].as_str()};
@@ -30,9 +31,10 @@ fn main() {
     let data = &docs[0];
 
     process_fact(fact_name, data);
-
+*/
 }
 
+#[allow(dead_code)]
 fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::PathBuf>
 {
     let search_path =
@@ -71,6 +73,7 @@ fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::Pa
     None
 }
 
+#[allow(dead_code)]
 fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::error::Error>>
 {
     assert!(fs::exists(file_path).expect("Can't find file"));
@@ -84,6 +87,7 @@ fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::e
     Ok(docs)
 }
 
+#[allow(dead_code)]
 fn process_fact(fact_name: &str, data: &Yaml)
 {
     println!("{:?}", data);
