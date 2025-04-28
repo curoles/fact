@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, DefaultHasher};
-use std::sync::Mutex;
+use std::sync::{RwLock};
 use yaml_rust::{YamlLoader, Yaml};
 pub use ctor_bare::register_ctor;
 
@@ -14,11 +14,12 @@ struct Node {
     data: Yaml    
 }
 
-type NodeMap = Mutex<HashMap<String, Node, BuildHasherDefault<DefaultHasher>>>;
+type NodeMap = HashMap<String, Node, BuildHasherDefault<DefaultHasher>>;
+type NodeMapMutex = RwLock<NodeMap>;
 
 // https://doc.rust-lang.org/std/collections/struct.HashMap.html
-static NODE_MAP: NodeMap =
-    Mutex::new(HashMap::with_hasher(BuildHasherDefault::new()));
+static NODE_MAP: NodeMapMutex =
+    RwLock::new(HashMap::with_hasher(BuildHasherDefault::new()));
 
 
 fn register_node(name: &'static str, yaml: &'static str) {
@@ -27,7 +28,7 @@ fn register_node(name: &'static str, yaml: &'static str) {
     let data = docs[0].clone();
     let node = Node {name, yaml, data};
     println!("{:?}", node.data);
-    NODE_MAP.lock().unwrap().insert(name.to_string(), node);
+    NODE_MAP.write().unwrap().insert(name.to_string(), node);
 }
 
 #[macro_export]
@@ -55,7 +56,20 @@ impl Node {
         self.yaml
     }
     
-    fn get_map() -> &'static NodeMap {
+    fn get_map() -> &'static NodeMapMutex {
         &NODE_MAP
+    }
+    
+    //fn get(node_name: &str) -> Option<&Node> {
+    //    let map = Self::get_map().read().unwrap();
+    //    map.get(node_name)
+    //}
+    
+    fn exists(node_name: &str) -> Option<()> {
+        let map = Self::get_map().read().unwrap();
+        match map.get(node_name) {
+            None => None,
+            Some(_) => Some(())
+        }
     }
 }
