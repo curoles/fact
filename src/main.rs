@@ -2,14 +2,16 @@ use std::fs;
 use std::path;
 use std::env;
 
+//https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
 use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
-//https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
-
+use crate::kg::Node;
 mod kg;
 
 fn main() {
 
+    assert!(Node::exists("str").is_some());
+    assert!(Node::exists("num").is_some());
 /*
     let args: Vec<_> = env::args().collect();
 

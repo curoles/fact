@@ -8,7 +8,7 @@ mod str;
 mod num;
 
 #[allow(dead_code)]
-struct Node {
+pub struct Node {
     name: &'static str,
     yaml: &'static str,
     data: Yaml    
@@ -37,7 +37,7 @@ macro_rules! register {
         use $crate::kg::{register_ctor, register_node};
         #[register_ctor]
         fn $registration_fn_name() {
-            let this_file = &file!()[4 .. (file!().len() - 3)];
+            let this_file = &file!()[7 .. (file!().len() - 3)];
             let yaml_string = include_str!($yaml_file);
             register_node(this_file, yaml_string);
         }
@@ -65,7 +65,7 @@ impl Node {
     //    map.get(node_name)
     //}
     
-    fn exists(node_name: &str) -> Option<()> {
+    pub fn exists(node_name: &str) -> Option<()> {
         let map = Self::get_map().read().unwrap();
         match map.get(node_name) {
             None => None,
