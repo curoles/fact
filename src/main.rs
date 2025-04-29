@@ -5,13 +5,21 @@ use std::env;
 //https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
 use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
-use crate::kg::Node;
+use crate::kg::{Node, Graph};
 mod kg;
 
 fn main() {
 
     assert!(Node::exists("str").is_some());
     assert!(Node::exists("num").is_some());
+    
+    let ok = Graph::check().expect("Error while checking graph");
+    
+    if !ok {
+        println!("Graph is broken");
+        //return
+    }
+
 /*
     let args: Vec<_> = env::args().collect();
 
