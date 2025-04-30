@@ -13,6 +13,8 @@ fn main() {
     assert!(Node::exists("str").is_some());
     assert!(Node::exists("num").is_some());
     
+    let _ok = Graph::init();
+
     let ok = Graph::check().expect("Error while checking graph");
     
     if !ok {

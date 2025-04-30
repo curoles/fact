@@ -4,6 +4,7 @@ use std::sync::{RwLock};
 use yaml_rust::{YamlLoader, Yaml};
 pub use ctor_bare::register_ctor;
 
+mod val;
 mod str;
 mod num;
 
@@ -69,8 +70,7 @@ impl Node {
         }
     }
     
-    pub fn get_links(&self) -> Vec<String> {
-        //let mut links: Vec<String> = vec![];
+    pub fn get_links_name(&self) -> Vec<String> {
         let top = self.data.as_hash().unwrap();
         let top = top.get(&Yaml::from_str(self.name)).unwrap();
         let keys = top.as_hash().unwrap().keys();
@@ -79,6 +79,24 @@ impl Node {
             .collect::<Vec<String>>();
         println!("links: {:?}", links);
         links
+    }
+
+    pub fn check_links(&self) -> Result<bool, Box<dyn std::error::Error>> {
+        let top = self.data.as_hash().ok_or("node top is not hash")?;
+        let top = top.get(&Yaml::from_str(self.name)).ok_or("wrong node name")?;
+        let links = top.as_hash().ok_or("links not hash")?;
+        for (link_name, link_data) in links {
+            //println!("link: {:?}, data: {:?}", link_name.as_str().unwrap(), link_data);
+            let data = link_data.as_vec().ok_or("link data not array")?;
+            let target_node = &data[1].as_str().ok_or("target node not string")?;
+            println!("link: {:?}, target: {:?}", link_name.as_str().unwrap(), target_node);
+            if Node::exists(target_node).is_none() {
+                println!("Error: target node: '{}' does not exist, in '{}:{}'",
+                    target_node, self.name, link_name.as_str().unwrap());
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 
 }
@@ -95,20 +113,18 @@ impl Graph {
         &NODE_MAP
     }
     
+    pub fn init() -> Result<bool, Box<dyn std::error::Error>> {
+        //let mut map = Self::get().write()?;
+        //map.insert("val".to_string(),
+        //    Node {name: "val", yaml: "", data: Yaml::from_str("")});
+        Ok(true)
+    }
+
     pub fn check() -> Result<bool, Box<dyn std::error::Error>> {
-        let map = Self::get().read().unwrap();
+        let map = Self::get().read()?;
         for (node_name, node) in map.iter() {
             println!("name: {}, node: {:?}", node_name, node.data);
-            let links = node.get_links();
-            for link_name in links {
-                // [[label], node_name]
-                let link_node_name = link_name.clone(); //FIXME
-                if Node::exists(&link_node_name).is_none() {
-                    println!("node: '{}' does not exist, in '{}:{}'",
-                        link_node_name, node_name, link_name);
-                    return Ok(false);
-                }
-            }
+            let _ok = node.check_links()?;
         }
         Ok(true)
     }
