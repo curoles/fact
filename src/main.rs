@@ -6,9 +6,14 @@ use std::env;
 use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
 use crate::kg::{Node, Graph};
+use crate::display::CliDisplay;
+
 mod kg;
+mod display;
 
 fn main() {
+
+    let args: Vec<_> = env::args().collect();
 
     assert!(Node::exists("str").is_some());
     assert!(Node::exists("num").is_some());
@@ -21,29 +26,13 @@ fn main() {
         println!("Graph is broken");
         //return
     }
-
-/*
-    let args: Vec<_> = env::args().collect();
-
-    let fact_name = if args.len() <= 1 {"string"} else {args[1].as_str()};
-	println!("Fact name is '{}'", fact_name);
-
-    let search_path = if args.len() <= 2 {None} else {Some(args[2].as_str())};
-	let file_path = find_fact_file(fact_name, search_path);
-
-    if file_path.is_none() {
-        println!("Can't find file for '{}'", fact_name);
-        return;
+    
+    let dsp = CliDisplay;
+        
+    if args.len() == 2 {
+        let node_name = args[1].as_str();
+        Graph::display_node(&dsp, node_name);    
     }
-
-    let file_path = file_path.unwrap();
-
-    let docs = read_fact_file(&file_path).unwrap();
-
-    let data = &docs[0];
-
-    process_fact(fact_name, data);
-*/
 }
 
 #[allow(dead_code)]

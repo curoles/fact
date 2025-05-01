@@ -4,6 +4,8 @@ use std::sync::{RwLock};
 use yaml_rust::{YamlLoader, Yaml};
 pub use ctor_bare::register_ctor;
 
+use crate::display::{KgDisplay};
+
 mod val;
 mod str;
 mod num;
@@ -11,7 +13,7 @@ mod math;
 
 #[allow(dead_code)]
 pub struct Node {
-    name: &'static str,
+    pub name: &'static str,
     yaml: &'static str,
     data: Yaml    
 }
@@ -25,11 +27,11 @@ static NODE_MAP: RwNodeMap =
 
 
 fn register_node(name: &'static str, yaml: &'static str) {
-    println!("register: {name}\n{yaml}");
+    //println!("register: {name}\n{yaml}");
     let docs = YamlLoader::load_from_str(yaml).unwrap();
     let data = docs[0].clone();
     let node = Node {name, yaml, data};
-    println!("{:?}", node.data);
+    //println!("{:?}", node.data);
     NODE_MAP.write().unwrap().insert(name.to_string(), node);
 }
 
@@ -78,7 +80,8 @@ impl Node {
         let links = keys
             .map(|k| k.clone().into_string().unwrap())
             .collect::<Vec<String>>();
-        println!("links: {:?}", links);
+        //println!("links: {:?}", links);
+        #[allow(clippy::let_and_return)]
         links
     }
 
@@ -90,7 +93,7 @@ impl Node {
             //println!("link: {:?}, data: {:?}", link_name.as_str().unwrap(), link_data);
             let data = link_data.as_vec().ok_or("link data not array")?;
             let target_node = &data[1].as_str().ok_or("target node not string")?;
-            println!("link: {:?}, target: {:?}", link_name.as_str().unwrap(), target_node);
+            //println!("link: {:?}, target: {:?}", link_name.as_str().unwrap(), target_node);
             if Node::exists(target_node).is_none() {
                 println!("Error: target node: '{}' does not exist, in '{}:{}'",
                     target_node, self.name, link_name.as_str().unwrap());
@@ -123,10 +126,23 @@ impl Graph {
 
     pub fn check() -> Result<bool, Box<dyn std::error::Error>> {
         let map = Self::get().read()?;
-        for (node_name, node) in map.iter() {
-            println!("name: {}, node: {:?}", node_name, node.data);
-            let _ok = node.check_links()?;
+        for (_node_name, node) in map.iter() {
+            //println!("name: {}, node: {:?}", node_name, node.data);
+            let ok = node.check_links()?;
+            if !ok {
+                return Ok(false);
+            }
         }
         Ok(true)
+    }
+    
+    pub fn display_node(dsp: &dyn KgDisplay, node_name: &str) {
+        let map = Graph::get().read().unwrap();
+        if let Some(node) = map.get(node_name) {
+            dsp.node(node);
+        }
+        else {
+            dsp.no_node(node_name);
+        }
     }
 }
