@@ -7,6 +7,7 @@ pub use ctor_bare::register_ctor;
 mod val;
 mod str;
 mod num;
+mod math;
 
 #[allow(dead_code)]
 pub struct Node {

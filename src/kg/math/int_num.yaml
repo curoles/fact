@@ -1,6 +1,6 @@
-int_num:
+math/int_num:
   val: [[is], num]
   desc:
     - [has]
     - str
-    - {val: "integral number"}]
+    - {val: "integral number"}
