@@ -10,11 +10,12 @@ mod val;
 mod str;
 mod num;
 mod math;
+mod comp;
 
 #[allow(dead_code)]
 pub struct Node {
     pub name: &'static str,
-    yaml: &'static str,
+    pub yaml: &'static str,
     data: Yaml    
 }
 

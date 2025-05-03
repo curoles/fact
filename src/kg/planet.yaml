@@ -1,4 +1,0 @@
-planet:
-  self: [[is], idea]
-  name: [[is], str]
-  mass: [[is], math/real_num]
