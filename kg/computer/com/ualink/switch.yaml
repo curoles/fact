@@ -1,4 +1,4 @@
 has:
-  name: description
-  type: str
-  value: "connects accelerators"
+  description:
+    type: str
+    value: "connects accelerators"

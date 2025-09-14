@@ -1,4 +1,4 @@
 has:
-  name: description
-  type: str
-  value: todo
+  description:
+    type: str
+    value: todo

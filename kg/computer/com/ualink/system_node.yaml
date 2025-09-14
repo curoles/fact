@@ -1,12 +1,9 @@
-is: idea
 has:
-  name: spec_url
-  type: str
-  value: "https://ualinkconsortium.org/wp-content/uploads/2025/04/UALink200_Specification_v1.0_Evaluation_Copy.pdf"
-has:
-  name: host_cpu
-  type: computer/cpu
-has:
-  name: acc
-  type: computer/ai/accelerator
+  spec_url:
+    type: str
+    value: "https://ualinkconsortium.org/wp-content/uploads/2025/04/UALink200_Specification_v1.0_Evaluation_Copy.pdf"
+  host_cpu:
+    type: computer/cpu
+  acc:
+    type: computer/ai/accelerator
 
