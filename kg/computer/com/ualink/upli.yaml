@@ -1,2 +1,2 @@
-is: alias
-  name: computer/com/ualink/protocol_level_interface
+is:
+  alias: computer/com/ualink/protocol_level_interface

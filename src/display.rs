@@ -14,7 +14,7 @@ impl KgDisplay for CliDisplay {
     }
 
     fn node(&self, node: &Node) {
-        println!("{}", node.yaml);
+        println!("{}\n{}", node.name, node.yaml);
     }
 
 }

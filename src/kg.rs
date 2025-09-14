@@ -1,16 +1,17 @@
 use std::fs;
+use std::path;
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, DefaultHasher};
 use std::sync::{RwLock};
-use yaml_rust::{/*YamlLoader,*/ Yaml};
+use yaml_rust::{YamlLoader, Yaml};
 //pub use ctor_bare::register_ctor;
 
 use crate::display::{KgDisplay};
 
 #[allow(dead_code)]
 pub struct Node {
-    pub name: &'static str,
-    pub yaml: &'static str,
+    pub name: String,
+    pub yaml: String,
     data: Yaml    
 }
 
@@ -32,7 +33,7 @@ fn register_node(name: &'static str, yaml: &'static str) {
     NODE_MAP.write().unwrap().insert(name.to_string(), node);
 }*/
 
-#[macro_export]
+/*#[macro_export]
 macro_rules! register {
     ($registration_fn_name:ident, $yaml_file:literal) => {
         use $crate::kg::{register_ctor, register_node};
@@ -43,18 +44,29 @@ macro_rules! register {
             register_node(this_file, yaml_string);
         }
     };
+}*/
+
+fn read_fact_file(file_path: &path::Path) -> Result<String, Box<dyn std::error::Error>>
+{
+    assert!(fs::exists(file_path).expect("Can't find file"));
+
+    let file_contents: String =
+        fs::read_to_string(file_path)
+        .expect("Can't read file");
+
+    Ok(file_contents)
 }
 
 
 #[allow(dead_code)]
 impl Node {
 
-    fn name(&self) -> &'static str {
-        self.name
+    fn name(&self) -> &str {
+        &self.name
     }
 
-    fn yaml(&self) -> &'static str {
-        self.yaml
+    fn yaml(&self) -> &str {
+        &self.yaml
     }
         
     //fn get(node_name: &str) -> Option<&Node> {
@@ -70,7 +82,7 @@ impl Node {
         }
     }
     
-    pub fn get_links_name(&self) -> Vec<String> {
+    /*pub fn get_links_name(&self) -> Vec<String> {
         let top = self.data.as_hash().unwrap();
         let top = top.get(&Yaml::from_str(self.name)).unwrap();
         let keys = top.as_hash().unwrap().keys();
@@ -80,9 +92,9 @@ impl Node {
         //println!("links: {:?}", links);
         #[allow(clippy::let_and_return)]
         links
-    }
+    }*/
 
-    pub fn check_links(&self) -> Result<bool, Box<dyn std::error::Error>> {
+    /*pub fn check_links(&self) -> Result<bool, Box<dyn std::error::Error>> {
         let top = self.data.as_hash().ok_or("node top is not hash")?;
         let top = top.get(&Yaml::from_str(self.name)).ok_or("wrong node name")?;
         let links = top.as_hash().ok_or("links not hash")?;
@@ -98,7 +110,7 @@ impl Node {
             }
         }
         Ok(true)
-    }
+    }*/
 
 }
 
@@ -114,11 +126,11 @@ impl Graph {
         &NODE_MAP
     }
     
-    pub fn load_files(kg_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
-        println!("Load files {} ...", kg_path);
-        //let mut map = Self::get().write()?;
-        //map.insert("val".to_string(),
-        //    Node {name: "val", yaml: "", data: Yaml::from_str("")});
+    pub fn load_files(
+        kg_path: &path::Path,
+        base_path: &path::Path
+        ) -> Result<bool, Box<dyn std::error::Error>> {
+        println!("Load files {:?} ...", kg_path);
         for entry in fs::read_dir(kg_path)? {
             let entry = entry?;
             let path = entry.path();
@@ -126,15 +138,37 @@ impl Graph {
             let metadata = fs::metadata(&path)?;
             //println!("{:?}", path);
             if metadata.is_file() {
-                println!("file {:?}", path);
-                //let file_name = path.file_name().ok_or("No filename").ok()?;
-                //println!("{:?}", file_name);
-                //let file_name = file_name.to_str()?;
-                //println!("file {:?}", file_name);
+                //println!("file {:?}", path);
+                let rel_path = path.strip_prefix(base_path)?;
+                //println!("file {:?}", rel_path);
+                let fact_name = rel_path.with_extension("");
+                //println!("{:?}", fact_name);
+                let fact_name = fact_name.to_str().expect("cant' path->str");
+                println!("{:?}", fact_name);
+                let file_contents = read_fact_file(&path)?;
+                let yaml_result = YamlLoader::load_from_str(&file_contents);
+                if let Err(e) = yaml_result {
+                    println!("Yaml error: {}", e);
+                    return Err(Box::new(e));
+                }
+                let yaml_docs = yaml_result?;
+                let mut kg = Self::get().write()?;
+                kg.insert(
+                    fact_name.to_string(),
+                    Node {
+                        name: fact_name.to_string(),
+                        yaml: file_contents,
+                        data: yaml_docs[0].clone()
+                    }
+                );
             }
             else if metadata.is_dir() {
                 //println!("dir {:?}", path);
-                let _ = Self::load_files(path.to_str().expect("can't path->str"));
+                let result = Self::load_files(&path, base_path);
+                if let Err(e) = result {
+                    println!("Error while walking dir tree: {}", e);
+                    return Err(e);
+                }
             }
         }
         Ok(true)
@@ -142,13 +176,14 @@ impl Graph {
 
     pub fn check() -> Result<bool, Box<dyn std::error::Error>> {
         println!("Checking...");
-        let map = Self::get().read()?;
-        for (_node_name, node) in map.iter() {
-            println!("name: {}, node: {:?}", _node_name, node.data);
-            let ok = node.check_links()?;
+        let kg = Self::get().read()?;
+        for (_node_name, _node) in kg.iter() {
+            println!("fact: {}", _node_name);
+            //println!("fact: {}, node: {:?}", _node_name, node.data);
+            /*let ok = node.check_links()?;
             if !ok {
                 return Ok(false);
-            }
+            }*/
         }
         Ok(true)
     }
@@ -161,5 +196,11 @@ impl Graph {
         else {
             dsp.no_node(node_name);
         }
+    }
+
+    pub fn get_memory_footprint() -> usize {
+        let kg = Graph::get().read().unwrap();
+        // FIXME iterate and sum all object on heap key+val
+        kg.len()
     }
 }

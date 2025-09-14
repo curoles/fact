@@ -1,5 +1,5 @@
 //use std::fs;
-//use std::path;
+use std::path;
 use std::env;
 
 //https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
@@ -20,9 +20,11 @@ fn main() {
         return
     }
     
-    let _ok = Graph::load_files(args[1].as_str());
+    let kg_path = path::Path::new(args[1].as_str());
+    let _ok = Graph::load_files(kg_path, kg_path);
 
     let ok = Graph::check().expect("Error while checking graph");
+    println!("Memory footprint: {} bytes", Graph::get_memory_footprint());
     
     if !ok {
         println!("Graph is broken. Exit App.");
@@ -37,58 +39,7 @@ fn main() {
     }
 }
 
-/*#[allow(dead_code)]
-fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::PathBuf>
-{
-    let search_path =
-    match path_option {
-        None => {
-            let current_path = env::current_dir()
-            .expect("Can't get current directory");
 
-            current_path.to_str().unwrap().to_owned() + "/db"
-        }
-        Some(path_str) => {
-            path_str.to_string()
-        }
-    };
-    println!("Search in '{}'", search_path);
-
-    for entry in fs::read_dir(search_path).ok()? {
-        let entry = entry.ok()?;
-        let path = entry.path();
-
-        let metadata = fs::metadata(&path).ok()?;
-        //println!("{:?}", path);
-        if metadata.is_file() {
-            let file_name = path.file_name().ok_or("No filename").ok()?;
-            //println!("{:?}", file_name);
-            let file_name = file_name.to_str()?;
-            let file_name_n = &file_name[..fact_name.len()];
-            //println!("{:?}", file_name_n);
-            if file_name_n == fact_name {
-                println!("Found file for '{}' as {:?}", fact_name, path);
-                return Some(path);
-            }
-        }
-    }
-
-    None
-}*/
-
-/*#[allow(dead_code)]
-fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::error::Error>>
-{
-    assert!(fs::exists(file_path).expect("Can't find file"));
-
-    let file_contents: String =
-        fs::read_to_string(file_path)
-        .expect("Can't read file");
-
-    let docs = YamlLoader::load_from_str(&file_contents)?;
-
-    Ok(docs)
-}*/
 
 /*#[allow(dead_code)]
 fn process_fact(fact_name: &str, data: &Yaml)
