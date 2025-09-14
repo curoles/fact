@@ -1,3 +1,4 @@
+use std::fs;
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, DefaultHasher};
 use std::sync::{RwLock};
@@ -113,11 +114,29 @@ impl Graph {
         &NODE_MAP
     }
     
-    pub fn init() -> Result<bool, Box<dyn std::error::Error>> {
-        println!("Init...");
+    pub fn load_files(kg_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        println!("Load files {} ...", kg_path);
         //let mut map = Self::get().write()?;
         //map.insert("val".to_string(),
         //    Node {name: "val", yaml: "", data: Yaml::from_str("")});
+        for entry in fs::read_dir(kg_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            let metadata = fs::metadata(&path)?;
+            //println!("{:?}", path);
+            if metadata.is_file() {
+                println!("file {:?}", path);
+                //let file_name = path.file_name().ok_or("No filename").ok()?;
+                //println!("{:?}", file_name);
+                //let file_name = file_name.to_str()?;
+                //println!("file {:?}", file_name);
+            }
+            else if metadata.is_dir() {
+                //println!("dir {:?}", path);
+                let _ = Self::load_files(path.to_str().expect("can't path->str"));
+            }
+        }
         Ok(true)
     }
 

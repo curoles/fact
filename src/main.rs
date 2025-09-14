@@ -15,10 +15,12 @@ fn main() {
 
     let args: Vec<_> = env::args().collect();
 
-    //assert!(Node::exists("str").is_some());
-    //assert!(Node::exists("num").is_some());
+    if args.len() < 2 {
+        println!("Provide path to KG files. Exit App.");
+        return
+    }
     
-    let _ok = Graph::init();
+    let _ok = Graph::load_files(args[1].as_str());
 
     let ok = Graph::check().expect("Error while checking graph");
     
@@ -29,8 +31,8 @@ fn main() {
     
     let dsp = CliDisplay;
         
-    if args.len() == 2 {
-        let node_name = args[1].as_str();
+    if args.len() > 2 {
+        let node_name = args[2].as_str();
         Graph::display_node(&dsp, node_name);    
     }
 }
