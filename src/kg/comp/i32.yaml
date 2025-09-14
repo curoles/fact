@@ -1,5 +1,0 @@
-i32:
-  val:
-    - [is]
-    - comp/int_num
-    - {width: 32}

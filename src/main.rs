@@ -1,9 +1,9 @@
-use std::fs;
-use std::path;
+//use std::fs;
+//use std::path;
 use std::env;
 
 //https://github.com/chyh1990/yaml-rust/blob/master/examples/dump_yaml.rs
-use yaml_rust::{YamlLoader, Yaml};//, yaml};
+//use yaml_rust::{YamlLoader, Yaml};//, yaml};
 
 use crate::kg::{Node, Graph};
 use crate::display::CliDisplay;
@@ -15,16 +15,16 @@ fn main() {
 
     let args: Vec<_> = env::args().collect();
 
-    assert!(Node::exists("str").is_some());
-    assert!(Node::exists("num").is_some());
+    //assert!(Node::exists("str").is_some());
+    //assert!(Node::exists("num").is_some());
     
     let _ok = Graph::init();
 
     let ok = Graph::check().expect("Error while checking graph");
     
     if !ok {
-        println!("Graph is broken");
-        //return
+        println!("Graph is broken. Exit App.");
+        return
     }
     
     let dsp = CliDisplay;
@@ -35,7 +35,7 @@ fn main() {
     }
 }
 
-#[allow(dead_code)]
+/*#[allow(dead_code)]
 fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::PathBuf>
 {
     let search_path =
@@ -72,9 +72,9 @@ fn find_fact_file(fact_name: &str, path_option: Option<&str>) -> Option<path::Pa
     }
 
     None
-}
+}*/
 
-#[allow(dead_code)]
+/*#[allow(dead_code)]
 fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::error::Error>>
 {
     assert!(fs::exists(file_path).expect("Can't find file"));
@@ -86,9 +86,9 @@ fn read_fact_file(file_path: &path::PathBuf) -> Result<Vec<Yaml>, Box<dyn std::e
     let docs = YamlLoader::load_from_str(&file_contents)?;
 
     Ok(docs)
-}
+}*/
 
-#[allow(dead_code)]
+/*#[allow(dead_code)]
 fn process_fact(fact_name: &str, data: &Yaml)
 {
     println!("{:?}", data);
@@ -97,4 +97,4 @@ fn process_fact(fact_name: &str, data: &Yaml)
     //for (k, v) in *data {
     //    println!("{:?} -> {:?}", k, v);
     //}
-}
+}*/

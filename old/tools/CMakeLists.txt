@@ -1,1 +1,0 @@
-add_subdirectory(fact-check-yml-db)

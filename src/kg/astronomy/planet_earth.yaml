@@ -1,5 +1,0 @@
-astronomy/planet_earth:
-  self:
-    - [is]
-    - astronomy/planet
-    - {name: {val: "Earth"}, mass: {val: 1.123}}

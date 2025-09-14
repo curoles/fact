@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 yaml-rust = "0.4.5"
-ctor_bare = "0.2.1"
+#ctor_bare = "0.2.1"

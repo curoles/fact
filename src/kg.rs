@@ -1,16 +1,10 @@
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, DefaultHasher};
 use std::sync::{RwLock};
-use yaml_rust::{YamlLoader, Yaml};
-pub use ctor_bare::register_ctor;
+use yaml_rust::{/*YamlLoader,*/ Yaml};
+//pub use ctor_bare::register_ctor;
 
 use crate::display::{KgDisplay};
-
-mod val;
-mod str;
-mod num;
-mod math;
-mod comp;
 
 #[allow(dead_code)]
 pub struct Node {
@@ -27,6 +21,7 @@ static NODE_MAP: RwNodeMap =
     RwLock::new(HashMap::with_hasher(BuildHasherDefault::new()));
 
 
+/*#[allow(dead_code)]
 fn register_node(name: &'static str, yaml: &'static str) {
     //println!("register: {name}\n{yaml}");
     let docs = YamlLoader::load_from_str(yaml).unwrap();
@@ -34,7 +29,7 @@ fn register_node(name: &'static str, yaml: &'static str) {
     let node = Node {name, yaml, data};
     //println!("{:?}", node.data);
     NODE_MAP.write().unwrap().insert(name.to_string(), node);
-}
+}*/
 
 #[macro_export]
 macro_rules! register {
@@ -119,6 +114,7 @@ impl Graph {
     }
     
     pub fn init() -> Result<bool, Box<dyn std::error::Error>> {
+        println!("Init...");
         //let mut map = Self::get().write()?;
         //map.insert("val".to_string(),
         //    Node {name: "val", yaml: "", data: Yaml::from_str("")});
@@ -126,9 +122,10 @@ impl Graph {
     }
 
     pub fn check() -> Result<bool, Box<dyn std::error::Error>> {
+        println!("Checking...");
         let map = Self::get().read()?;
         for (_node_name, node) in map.iter() {
-            //println!("name: {}, node: {:?}", node_name, node.data);
+            println!("name: {}, node: {:?}", _node_name, node.data);
             let ok = node.check_links()?;
             if !ok {
                 return Ok(false);

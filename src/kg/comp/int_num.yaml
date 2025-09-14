@@ -1,4 +1,0 @@
-comp/int_num:
-  val: [[is], math/int_num]
-  desc: [[is], str, {val: "integral number reprsented with finite number of bits"}]
-  width: [[has], math/int_num]
