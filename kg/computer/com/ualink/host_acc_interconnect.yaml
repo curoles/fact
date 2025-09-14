@@ -1,0 +1,6 @@
+has:
+  description:
+    value: |
+      Host and Accelerator (Acc) are connected using an implementation chosen interconnect
+      such as CXL, PCIe, AMD Infinity Fabric, XGMI, CHI c2c, etc.
+

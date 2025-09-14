@@ -1,0 +1,4 @@
+has:
+  host_cpu:
+    type: computer/cpu
+

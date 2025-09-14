@@ -1,0 +1,5 @@
+has:
+  description: |
+     The Accelerator is attached to a set of UALink Links
+     that connect to a Switch and then on to another set of UALink links to the remote Accelerator
+     allowing UPLI transactions to be routed between Accelerators in different System Nodes.

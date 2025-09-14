@@ -1,0 +1,7 @@
+is:
+  ulpi_id:
+    value: computer/com/ualink/ulpi_id
+has:
+  description: |
+    All Accelerators in a Pod have a unique Accelerator ID, regardless of Physical Switch partitioning or
+    Virtual Pod partitioning.

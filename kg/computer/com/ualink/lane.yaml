@@ -1,0 +1,5 @@
+has:
+  description: |
+    Links consist of UALink Lanes. A Lane is a pair of signals, one for transmit and one for receive,
+    and UALink Lanes can be grouped into a one Lane Link (a x1 Link), two Lane Link (a x2 Link), and a
+    four Lane Link (a x4 Link).

@@ -1,0 +1,10 @@
+has:
+  description: |
+     A UALink Station is defined as a group of 4 UALink Lanes.
+     A UALink Station may be bifurcated to connect to one x4-UALink Links,
+     two x2 Links, or four x1 Links.
+     The maximum bandwidth for each UALink Station shall be 800 Gigabits /s (Gbps).
+     Max data rate per Lane is 200 GT/s.
+
+     The signaling rate is usually higher (212.5 GT/s) to accommodate the bandwidth consumed by
+     Ethernet Layer1 for Forward Error Correction Code (FEC) and additional Layer1 encoding.

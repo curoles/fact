@@ -1,0 +1,6 @@
+has:
+  node:
+    type: computer/com/ualink/system_node
+  os:
+    type: computer/os/operating_system
+
