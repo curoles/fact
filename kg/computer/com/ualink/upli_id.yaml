@@ -1,0 +1,12 @@
+has:
+  name: description
+  type: str
+  value: |
+    The UPLI allows up to 1024 Accelerators or endpoints in a system
+    to communicate using a 10-bit Identifier. The 10-bit Source and Destination
+    Accelerator Identifiers are used by the Switch to route
+    Requests and Responses between a sender and a receiver.
+has:
+  name: size_bits
+  type: num
+  value: 10

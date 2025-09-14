@@ -1,0 +1,9 @@
+has:
+  name: description
+  type: str
+  value: |
+    The collection of all the Accelerators and Switches
+    physically connected though UALink via Switches.
+has:
+  name: switch
+  type: computer/com/ualink/switch

@@ -1,0 +1,9 @@
+has:
+  name: subject
+  type: str
+has:
+  name: version
+  type: str
+has:
+  name: url
+  type: str
