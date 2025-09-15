@@ -1,0 +1,10 @@
+has:
+  description: |
+    The Transaction Layer (TL) shall connect to two UPLI Interfaces, one sourced from
+    a UPLI Originator and one sourced from a UPLI Completer. The TL shall drive a 64-byte Outbound
+    Transmit (Tx) Flit to the UALink DL and shall receive from the UALink DL a 64-byte Inbound
+    Receive (Rx) Flit from the UALink DL. The UPLI channels driven into the TL from both UPLI
+    interfaces shall be packaged into 64-byte Outbound Transmit (Tx) Flit which shall be transmitted to
+    the UALink DL. Similarly, the Receive (Rx) 64-byte TL Flit from the UALink DL shall be unpacked
+    into Request, Read Response/Data, Orig Data, and Write Response channels for the two attached
+    UPLI Interfaces.

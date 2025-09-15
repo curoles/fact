@@ -1,0 +1,9 @@
+has:
+  description: |
+    The data link layer receives 64-Byte Flits from the Transaction Layer (TL) and shall package these
+    Flits into 640-Byte Flits in the egress direction and shall send them to the Physical layer (PL).
+    Similarly, in the ingress direction the Data Link Layer (DL) shall receive 640-Byte Flits from the PL
+    and shall unpack then into 64-Byte Flits and then shall send them to the transaction layer (TL). The
+    DL shall provide a control message service used for coordinating changes to the link, i.e.,
+    online/offline, and other features. The DL shall provide a UART mechanism for firmware-controlled
+    sequences to be passed across the link.

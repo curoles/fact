@@ -1,0 +1,10 @@
+has:
+  description: |
+    In computer networking, a flit (flow control unit or flow control digit) is a link-level atomic piece
+    that forms a network packet or stream. The first flit, called the header flit holds information about
+    this packet's route (namely the destination address) and sets up the routing behavior for all subsequent
+    flits associated with the packet. The header flit is followed by zero or more body flits,
+    containing the actual payload of data. The final flit, called the tail flit, performs some book keeping
+    to close the connection between the two nodes.
+has:
+  url: "https://en.wikipedia.org/wiki/Flit_(computer_networking)"
