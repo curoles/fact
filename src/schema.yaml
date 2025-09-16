@@ -1,0 +1,8 @@
+type: object
+properties:
+  alias:
+    type: string
+  is:
+    type: object
+  has:
+    type: object

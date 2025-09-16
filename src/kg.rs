@@ -179,6 +179,7 @@ impl Graph {
         let kg = Self::get().read()?;
         for (_node_name, _node) in kg.iter() {
             println!("fact: {}", _node_name);
+            crate::schema::validate_yaml(&_node.yaml)?;
             //println!("fact: {}, node: {:?}", _node_name, node.data);
             /*let ok = node.check_links()?;
             if !ok {

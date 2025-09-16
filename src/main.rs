@@ -10,6 +10,7 @@ use crate::display::CliDisplay;
 
 mod kg;
 mod display;
+mod schema;
 
 fn main() {
 

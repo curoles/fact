@@ -1,0 +1,19 @@
+has:
+  spec_2025:
+    type: computer/com/net/psp/spec_2025
+  description: |
+    PSP uses the concept of a "Security Association" (SA) to represent the set of traffic to be
+    handled with a particular set of crypto state (keys, IVs, sequence numbers, etc.). An SA is
+    always unidirectional (simplex).
+
+    An SA defines a grouping of packets that are treated identically from an encryption and an
+    authentication standpoint. An SA can be any granularity ranging from individual TCP
+    connections to VM-to-VM tunnels aggregating all traffic between a pair of VMs. Configuration
+    of an SA includes:
+    - SPI (Security Parameters Index)
+    - Encryption key (stored on the sending side; derived on the receiver side)
+    - Crypt Offset specifying the amount of packet after the IV allowed to be cleartext (but still
+    authenticated) when operating in AES-GCM mode
+    - Traffic flow confidentiality configuration (TFC using the techniques described for IPSec)
+    - Lifetime of the SA (requirements for when it must be destroyed)
+

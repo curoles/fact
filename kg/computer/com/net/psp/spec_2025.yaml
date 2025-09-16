@@ -1,0 +1,7 @@
+is:
+  spec:
+    type: computer/specification
+    value:
+      subject: "PSP Arch Specification"
+      version: "1.0"
+      url: "https://raw.githubusercontent.com/google/psp/main/doc/PSP_Arch_Spec.pdf"
