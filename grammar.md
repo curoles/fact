@@ -1,15 +1,18 @@
 ```
+# abstract type
+is: <yaml_type>
+
 is:
   type: <type> # [str, num]
   value: <val>
 
 is:
   type: <type>
-  as: <supertype>
-  value:
-    <attr>:
-      type: <type>
-      value: <val>
+    as: <supertype>
+    value:
+      <attr>:
+        type: <type>
+        value: <val>
 ```
 
 ```
@@ -21,8 +24,8 @@ has:
 has:
   <attr>:
     type: <type> # custom_type
-    as: <supertype>
-    value: <val>
+      as: <supertype>
+      value: <val>
 
 has:
   <attr>: <yaml_val>

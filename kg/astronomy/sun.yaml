@@ -1,0 +1,5 @@
+is:
+  type: astronomy/star
+    as: astronomomy/object
+      mass:
+        value: 1.989e30
