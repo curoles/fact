@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 
 from kg import Kg
-
+from fact import Fact
 
 def main():
     """Main entry point."""
@@ -17,13 +17,14 @@ def main():
     parser.add_argument("name", help="The name of the user.")
     args = parser.parse_args()
 
-    print(f"Checking fact '{args.name}'")
+    fact_name = args.name
+    print(f"Checking fact '{fact_name}'")
 
     script_dir = Path(__file__).resolve().parent
     kg_dir = script_dir.parent / "kg"
     print(f"KG path: {kg_dir}")
 
-    file_path = kg_dir / (args.name + ".yaml")
+    file_path = kg_dir / (fact_name + ".yaml")
 
     if file_path.exists():
         print(f"The path exists: {file_path}")
@@ -33,9 +34,15 @@ def main():
 
     kg = Kg(kg_dir)
 
-    if 0 != kg.load(args.name):
+    if 0 != kg.load(fact_name):
         print("ERROR: could not load the fact")
         return 2
+
+    print(kg.get_dict()[fact_name])
+
+    fact = Fact(kg, fact_name)
+    if 0 != fact.construct():
+        print("ERROR: can not construct fact")
 
     return 0
 
