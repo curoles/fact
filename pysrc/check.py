@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+# xp -a pysrc/kg.py pysrc/check.py astronomy/universe
+
 import argparse
 from pathlib import Path
+
+from kg import Kg
 
 
 def main():
@@ -26,6 +30,14 @@ def main():
     else:
         print(f"ERROR: the path does NOT exist: {file_path}")
         return 1
+
+    kg = Kg(kg_dir)
+
+    if 0 != kg.load(args.name):
+        print("ERROR: could not load the fact")
+        return 2
+
+    return 0
 
 if __name__ == "__main__":
     main()
