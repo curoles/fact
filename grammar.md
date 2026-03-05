@@ -1,4 +1,9 @@
 ```
+yaml types are basic types: num, str, list([])
+empty list is null/void type
+```
+
+```
 # abstract type
 is: <yaml_type>
 

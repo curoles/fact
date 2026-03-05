@@ -23,6 +23,10 @@ class Kg(KgIface):
     def get_dict(self) -> Dict[str, Any]:
         """Get whole dictionary."""
         return self.data
+        
+    def get_fact(self, name: str) -> Dict:
+        """Get data about fact from dictionary."""
+        return self.data[name]
 
     def load(self, fact_name) -> int:
         path = self.path / (fact_name + ".yaml")

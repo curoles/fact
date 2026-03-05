@@ -1,0 +1,7 @@
+is:
+  type: str
+has:
+  inputs:
+    type: []
+  outputs:
+    type: []
