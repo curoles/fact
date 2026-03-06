@@ -1,7 +1,7 @@
-is:
-  type: str
-  value: astronomical object
-part: astronomy/universe
-has:
-  mass:
-    type: num
+- is:
+    type: str
+    value: astronomical object
+- part: astronomy/universe
+- has:
+    mass:
+      type: num
