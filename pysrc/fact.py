@@ -23,13 +23,13 @@ class Fact:
         if result != 0:
             return result
 
-        #result = Fact.construct_what_it_has(self)
+        #result = self.construct_what_it_has(self)
         #if result != 0:
         #    return result
 
-        #result = Fact.construct_what_it_part(self)
-        #if result != 0:
-        #    return result
+        result = self.construct_what_it_part()
+        if result != 0:
+            return result
 
         print(f"{self.name} constructed: {self.data['info']}")
 
@@ -42,7 +42,7 @@ class Fact:
 
         for tag in self.data["def"]:
             if "is" in tag.keys():
-                print(f"tag: {tag}")
+                print(f"is tag: {tag}")
                 if 0 != self.construct_tag_is(tag):
                     return 1
 
@@ -52,7 +52,7 @@ class Fact:
         """Construct what fact is"""
 
         data = tag["is"]
-        print(f"fact is: {data}")
+        print(f"is data: {data}")
 
         fact_types = self.data["info"]["type"]
 
@@ -88,3 +88,42 @@ class Fact:
                 return 1
 
         return 0
+
+    def construct_what_it_part(self) -> int:
+        """Check 'part' tags"""
+
+        self.data["info"]["part"] = []
+
+        for tag in self.data["def"]:
+            if "part" in tag.keys():
+                print(f"part tag: {tag}")
+                if 0 != self.construct_tag_part(tag):
+                    return 1
+
+        return 0
+
+    def construct_tag_part(self, tag: dict) -> int:
+        """Construct what fact belongs to"""
+
+        data = tag["part"]
+        print(f"part data: {data}")
+
+        fact_owners = self.data["info"]["part"]
+
+        ret_status = 0
+
+        match data:
+            case str():
+                print(f"fact belongs to '{data}'")
+                if self.kg.load(data) != 0:
+                    print(f"ERROR: can't load fact '{data}'")
+                    return 2
+                fact_owners.append(data)
+            #case dict():
+            #    print("fact is 'dict' type")
+            #    ret_status = self.parse_construct_tag_is_dict(data)
+            case _:
+                print(f"ERROR: unknown type of {data}")
+                return 1
+
+        return ret_status

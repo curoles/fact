@@ -1,0 +1,9 @@
+- is:
+    type: math/function
+    value:
+      - inputs:
+          type: list
+          value: ["n"]
+      - outputs:
+          type: list
+          value: ["n + 1"]
