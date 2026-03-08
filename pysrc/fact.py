@@ -19,13 +19,13 @@ class Fact:
 
         self.data["info"] = {}
 
-        result = Fact.construct_what_it_is(self)
+        result = self.construct_what_it_is()
         if result != 0:
             return result
 
-        #result = self.construct_what_it_has(self)
-        #if result != 0:
-        #    return result
+        result = self.construct_what_it_has()
+        if result != 0:
+            return result
 
         result = self.construct_what_it_part()
         if result != 0:
@@ -127,3 +127,59 @@ class Fact:
                 return 1
 
         return ret_status
+
+    def construct_what_it_has(self) -> int:
+        """Check 'has' tags"""
+
+        self.data["info"]["has"] = {}
+
+        for tag in self.data["def"]:
+            if "has" in tag.keys():
+                print(f"has tag: {tag}")
+                if 0 != self.construct_tag_has(tag):
+                    return 1
+
+        return 0
+
+    def construct_tag_has(self, tag: dict) -> int:
+        """Construct what fact has"""
+
+        data = tag["has"]
+        print(f"has data: {data}")
+
+        fact_has = self.data["info"]["has"]
+
+        ret_status = 0
+
+        match data:
+            case str():
+                print(f"fact has '{data}'")
+                #if self.kg.load(data) != 0:
+                #    print(f"ERROR: can't load fact '{data}'")
+                #    return 2
+                #fact_has.append(data)
+                return 1 # FIXME
+            case dict():
+                print("'has' tag data type is 'dict'")
+                ret_status = self.parse_construct_tag_has_dict(data)
+            case _:
+                print(f"ERROR: unknown type of {data}")
+                return 1
+
+        return ret_status
+
+    def parse_construct_tag_has_dict(self, info: dict) -> int:
+        """Construct phase parse has dict"""
+
+        attr_name = next(iter(info))
+        attr = {}
+
+        # must have type
+
+        fact_has = self.data["info"]["has"]
+        if attr_name in fact_has:
+            print(f"ERROR: already exists attr {attr_name}")
+            return 1
+        fact_has[attr_name] = attr
+
+        return 0
