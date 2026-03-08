@@ -1,7 +1,8 @@
-is:
-  type: str
-has:
-  inputs:
-    type: []
-  outputs:
-    type: []
+- is:
+    type: str
+    value: function
+- has:
+    inputs:
+      type: list
+    outputs:
+      type: list

@@ -39,6 +39,7 @@ class Fact:
         """Check 'is' tags"""
 
         self.data["info"]["type"] = []
+        self.data["info"]["val_as"] = {}
 
         for tag in self.data["def"]:
             if "is" in tag.keys():
@@ -79,15 +80,40 @@ class Fact:
             return 1
 
         fact_types = self.data["info"]["type"]
+        info_type = info["type"]
 
-        match info["type"]:
+        match info_type:
             case "str":
                 fact_types.append("str")
+            case "num":
+                fact_types.append("num")
             case _:
-                print(f"ERROR: implement me")
-                return 1
+                if self.kg.load(info_type) != 0:
+                    print(f"ERROR: can't load fact '{info_type}'")
+                    return 2
+                fact_types.append(info_type)
+
+        if "as" in info:
+            for as_type in info["as"]:
+                err, type_name, as_type_val = self.parse_construct_tag_is_as_type(as_type)
+                if err != 0:
+                    print(f"ERROR: can't parse '{as_type}'")
+                    return 3
+                self.data["info"]["val_as"][type_name] = as_type_val
 
         return 0
+
+    def parse_construct_tag_is_as_type(self, as_type: dict) -> (int, str, dict):
+        print(f"as type {as_type}")
+        err = 0
+        as_type_val = {}
+        type_name = next(iter(as_type))
+
+        attrs = as_type[type_name]
+        for attr_name in attrs:
+            as_type_val[attr_name] = attrs[attr_name]["value"]
+
+        return (err, type_name, as_type_val)
 
     def construct_what_it_part(self) -> int:
         """Check 'part' tags"""
@@ -174,7 +200,12 @@ class Fact:
         attr_name = next(iter(info))
         attr = {}
 
-        # must have type
+        if "type" not in info[attr_name]:
+            print(f"ERROR: attr must have type")
+            return 1
+
+        attr_type = info[attr_name]["type"]
+        attr["type"] = attr_type
 
         fact_has = self.data["info"]["has"]
         if attr_name in fact_has:
