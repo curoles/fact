@@ -1,7 +1,10 @@
-has:
-  subject:
-    type: str
-  version:
-    type: str
-  url:
-    type: str
+- is: detailed description of the design
+- has:
+    subject:
+      type: str
+- has:
+    version:
+      type: str
+- has:
+    url:
+      type: str

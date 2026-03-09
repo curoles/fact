@@ -1,7 +1,10 @@
-is:
-  spec:
+- is:
     type: computer/specification
-    value:
-      subject: "PSP Arch Specification"
-      version: "1.0"
-      url: "https://raw.githubusercontent.com/google/psp/main/doc/PSP_Arch_Spec.pdf"
+    as:
+      - computer/specification:
+          subject:
+            value: "PSP Arch Specification"
+          version:
+            value: "1.0"
+          wiki_url:
+            value: "https://raw.githubusercontent.com/google/psp/main/doc/PSP_Arch_Spec.pdf"

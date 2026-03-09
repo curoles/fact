@@ -53,11 +53,15 @@ items:
       type: object
       description: Declares properties this entity possesses
       additionalProperties:
-        type: object
-        required: [type]
-        additionalProperties: false
-        properties:
-          type:
-            type: string
-            description: Property type, e.g. "str", "num", "list"
-          value: {}
+        oneOf:
+          - description: Explicit form with type declared
+            type: object
+            required: [type]
+            additionalProperties: false
+            properties:
+              type:
+                type: string
+                description: Property type, e.g. "str", "num", "list"
+              value: {}
+          - description: Shorthand form; type is deduced from value
+            type: [string, number, array, "null"]

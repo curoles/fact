@@ -200,12 +200,20 @@ class Fact:
         attr_name = next(iter(info))
         attr = {}
 
-        if "type" not in info[attr_name]:
-            print(f"ERROR: attr must have type")
-            return 1
-
-        attr_type = info[attr_name]["type"]
-        attr["type"] = attr_type
+        if "type" in info[attr_name]:
+            attr_type = info[attr_name]["type"]
+            attr["type"] = attr_type
+        else:
+            match info[attr_name]:
+                case str():
+                    attr["type"] = "str"
+                    attr["val"] = info[attr_name]
+                case int():
+                    attr["type"] = "num"
+                    attr["val"] = info[attr_name]
+                case _:
+                    print(f"ERROR: unknown type {info[attr_name]}")
+                    return 1
 
         fact_has = self.data["info"]["has"]
         if attr_name in fact_has:
