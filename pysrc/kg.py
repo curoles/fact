@@ -1,4 +1,5 @@
 import yaml
+import jsonschema
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Dict, Any
@@ -25,9 +26,10 @@ class Kg(KgIface):
     # Class attribute (shared by all instances)
     # xxxxx = "xxxx"
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, schema: str):
         """Constructor method to initialize instance attributes."""
         self.path = path
+        self.schema = schema
         self.data : Dict[str, Any] = {}
 
     def get_dict(self) -> Dict[str, Any]:
@@ -50,4 +52,16 @@ class Kg(KgIface):
             path, "r", encoding="utf-8"
         ).read()
         self.data[fact_name] = { "def": yaml.safe_load(yaml_str) }
+        if not self.validate_schema(self.data[fact_name]["def"]):
+            return 1
         return 0
+
+    def validate_schema(self, yaml_data: str) -> bool:
+        try:
+            jsonschema.validate(instance=yaml_data, schema=self.schema)
+            print("valid schema")
+        except jsonschema.ValidationError as e:
+            print(f"ERROR: invalid schema: {e.message}")
+            print(f"  at path: {list(e.absolute_path)}")
+            return False
+        return True

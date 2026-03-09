@@ -2,6 +2,7 @@
 
 # xp -a pysrc/kg.py pysrc/check.py astronomy/universe
 
+import yaml
 import argparse
 from pathlib import Path
 
@@ -24,6 +25,12 @@ def main():
     kg_dir = script_dir.parent / "kg"
     print(f"KG path: {kg_dir}")
 
+    schema_file = open(script_dir.parent / "schema.yaml", "r", encoding="utf-8")
+    if schema_file.closed:
+        print(f"ERROR: can't open  {schema_file}")
+        return 1
+    schema = yaml.safe_load(schema_file.read())
+
     file_path = kg_dir / (fact_name + ".yaml")
 
     if file_path.exists():
@@ -32,7 +39,7 @@ def main():
         print(f"ERROR: the path does NOT exist: {file_path}")
         return 1
 
-    kg = Kg(kg_dir)
+    kg = Kg(kg_dir, schema)
 
     if 0 != kg.load(fact_name):
         print("ERROR: could not load the fact")

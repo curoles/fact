@@ -1,0 +1,63 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Knowledge Graph Entity
+description: Schema for fact kg entity YAML files
+type: array
+items:
+  type: object
+  minProperties: 1
+  maxProperties: 1
+  additionalProperties: false
+  properties:
+
+    is:
+      description: Declares identity or type of this entity
+      oneOf:
+        - type: string
+          description: Simple named identity (e.g. "universe")
+        - type: object
+          required: [type]
+          additionalProperties: false
+          properties:
+            type:
+              type: string
+              description: Type identifier, e.g. "str", "num", "astronomy/object"
+            value:
+              description: Optional literal value
+              oneOf:
+                - type: string
+                - type: number
+                - type: array
+            as:
+              type: array
+              description: Property overrides cast as a parent type
+              items:
+                type: object
+                description: >
+                  Each item is a single-key map where the key is a type path
+                  and the value is a map of property name to {value: ...}
+                minProperties: 1
+                maxProperties: 1
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    properties:
+                      value: {}
+                    additionalProperties: false
+
+    part:
+      type: string
+      description: Reference to a parent or container entity path
+
+    has:
+      type: object
+      description: Declares properties this entity possesses
+      additionalProperties:
+        type: object
+        required: [type]
+        additionalProperties: false
+        properties:
+          type:
+            type: string
+            description: Property type, e.g. "str", "num", "list"
+          value: {}
