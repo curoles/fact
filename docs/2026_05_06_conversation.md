@@ -608,3 +608,67 @@ Query tool → rule engine → API endpoint. Each piece emerged from need:
 rules needed queries, queries needed an API for LLM access. The `is`/`has`/
 `part` foundation held through code generation, rule inference, and live
 API querying without any changes to the core.
+
+---
+
+## Chemistry domain and quantum mechanics connection
+
+### Chemistry ontology (from research)
+
+Molecule and substance are distinct concepts (per ChEBI ontology):
+
+- **Molecule** — abstract chemical entity: formula, molecular mass, bond types,
+  geometry. E.g., H₂O is a molecule.
+- **Substance** — bulk material: boiling point, density, melting point. E.g.,
+  water is a substance composed of H₂O molecules.
+- **Compound** — a substance composed of two or more different elements.
+  H₂O is a compound. O₂ is a substance but not a compound.
+- **States of matter** — ice, liquid water, steam are the SAME substance in
+  different phases. Phase is a property of the substance, not a separate fact.
+
+Proposed KG structure:
+```
+chemistry/molecule.yaml              — type: formula, molecular_mass, geometry
+chemistry/molecule/h2o.yaml          — the molecule
+chemistry/substance.yaml             — type: melting_point, boiling_point, density
+chemistry/substance/water.yaml       — composed_of: chemistry/molecule/h2o
+chemistry/compound.yaml              — subtype of substance
+chemistry/classification/organic.yaml
+chemistry/classification/inorganic.yaml
+```
+
+Property assignment rule: if the property requires temperature/pressure
+conditions, it belongs to the substance. Molecule-level: formula, mass,
+bonds. Substance-level: melting/boiling point, density, color.
+
+### Chemistry drives quantum mechanics facts
+
+Chemistry IS applied quantum mechanics. Adding molecule facts naturally
+pulls in physics laws:
+
+**Physics laws needed by chemistry:**
+- **Coulomb's law** — `F = kq₁q₂/r²` — electrostatic force, fundamental
+  to bonding
+- **Schrödinger equation** — foundational quantum mechanics
+- **Pauli exclusion principle** — explains electron configurations (we
+  already have subshell facts!)
+- **Bond energy expressions** — energy of molecular bonds
+
+**The connection chain:**
+`physics/quantum/` → explains → `chemistry/molecule/` → composes →
+`chemistry/substance/`
+
+We already have electron configurations and subshell quantum numbers for
+all 118 elements. Adding `physics/quantum/` laws would connect this existing
+data to chemistry bonding theory.
+
+### App idea: Molecular Bond Viewer
+
+Select two elements → show their electron configurations → predict bond
+type and geometry based on quantum mechanics facts → display the molecule.
+
+The physics laws compute (expression evaluator), the chemistry facts
+display (web app). Cross-domain knowledge in action.
+
+This would drive both chemistry facts AND physics law facts simultaneously,
+solving the "what app drives physics laws?" question.
