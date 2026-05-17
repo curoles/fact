@@ -1,0 +1,8 @@
+- is:
+    type: knowledge/rule
+    as:
+      - knowledge/rule:
+          when:
+            value: "?X is ?Y AND ?Y is ?Z"
+          then:
+            value: "?X is ?Z"
