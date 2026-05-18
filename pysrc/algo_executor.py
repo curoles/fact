@@ -48,6 +48,8 @@ class AlgorithmExecutor:
             result = self._exec_assign_indexed(step_as, variables)
         elif step_type == "computer/algorithm/swap":
             result = self._exec_swap(step_as, variables)
+        elif step_type == "computer/algorithm/call":
+            result = self._exec_call(step, variables)
         elif step_type == "computer/algorithm/evaluate_expression":
             result = self._exec_evaluate_expression_inline(step_as, variables)
         elif step_type == "computer/algorithm/evaluate_expression_fact":
@@ -60,20 +62,61 @@ class AlgorithmExecutor:
             return self._execute_step(next_step, steps, variables)
         return result
 
+    def _resolve_dot(self, name, variables):
+        """Resolve dot notation: input.array → variables["input"]["array"]."""
+        parts = name.split(".")
+        val = variables[parts[0]]
+        for part in parts[1:]:
+            val = val[part]
+        return val
+
     def _resolve_value(self, expr, variables):
         if isinstance(expr, (int, float)):
             return expr
         expr = str(expr)
         if "[" in expr:
-            arr_name, idx_str = expr.rstrip("]").split("[")
-            idx = int(variables[idx_str]) if idx_str in variables else int(idx_str)
-            return variables[arr_name][idx]
+            arr_part, idx_str = expr.rstrip("]").split("[")
+            idx = int(self._resolve_value(idx_str, variables)) if idx_str in variables else int(idx_str)
+            if "." in arr_part:
+                arr = self._resolve_dot(arr_part, variables)
+            else:
+                arr = variables[arr_part]
+            return arr[idx]
+        if "." in expr:
+            return self._resolve_dot(expr, variables)
         if expr in variables:
             return variables[expr]
         try:
             return float(expr)
         except ValueError:
             return expr
+
+    def _resolve_arg(self, arg_val, variables):
+        """Resolve an argument — handles dicts (compound types), lists, and scalars."""
+        if isinstance(arg_val, dict):
+            return {k: self._resolve_value(v, variables) for k, v in arg_val.items()}
+        if isinstance(arg_val, list):
+            return [self._resolve_value(v, variables) for v in arg_val]
+        return self._resolve_value(arg_val, variables)
+
+    def _exec_call(self, step, variables):
+        """Execute a call step — invoke another algorithm with arguments."""
+        step_type = step["type"]
+        step_as = step.get("val_as", {}).get(step_type, {})
+        algo_path = step_as.get("algorithm", "")
+        result_var = step_as.get("result_variable", "")
+
+        # collect arguments from the called algorithm's as block
+        called_args = {}
+        for as_key, as_vals in step.get("val_as", {}).items():
+            if as_key == step_type:
+                continue
+            for arg_name, arg_val in as_vals.items():
+                called_args[arg_name] = self._resolve_arg(arg_val, variables)
+
+        result = self.execute(algo_path, called_args)
+        if result_var:
+            variables[result_var] = result
 
     def _exec_assign(self, step_as, variables):
         var_name = step_as.get("variable", "")
@@ -110,12 +153,13 @@ class AlgorithmExecutor:
         from_val = int(self._resolve_value(step_as.get("from", 0), variables))
         to_length_key = step_as.get("to_length", "")
         if to_length_key:
-            to_val = len(variables[to_length_key]) - 1
+            arr = self._resolve_value(to_length_key, variables)
+            end = len(arr)
         else:
-            to_val = int(self._resolve_value(step_as.get("to", 0), variables))
+            end = int(self._resolve_value(step_as.get("to", 0), variables))
         body_step = step_as.get("body", "")
 
-        for i in range(from_val, to_val + 1):
+        for i in range(from_val, end):
             variables[index_name] = i
             if body_step and body_step in steps:
                 self._execute_step(body_step, steps, variables)

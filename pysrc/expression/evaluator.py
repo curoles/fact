@@ -46,26 +46,36 @@ class ExpressionEvaluator:
         self._op_cache[op_path] = fn
         return fn
 
+    def _resolve_dot(self, name, variables):
+        """Resolve dot notation: input.array → variables["input"]["array"]."""
+        parts = name.split(".")
+        val = variables[parts[0]]
+        for part in parts[1:]:
+            val = val[part]
+        return val
+
     def _resolve_value(self, expr, variables):
-        """Resolve a value string — handles variables and array[index] access."""
+        """Resolve a value string — handles dots, array[index], and plain variables."""
         if isinstance(expr, (int, float)):
             return expr
         expr = str(expr)
         if "[" in expr:
-            arr_name, idx_str = expr.rstrip("]").split("[")
-            idx = int(variables[idx_str]) if idx_str in variables else int(idx_str)
-            return variables[arr_name][idx]
+            arr_part, idx_str = expr.rstrip("]").split("[")
+            idx = int(self._resolve_value(idx_str, variables)) if idx_str in variables else int(idx_str)
+            if "." in arr_part:
+                arr = self._resolve_dot(arr_part, variables)
+            else:
+                arr = variables[arr_part]
+            return arr[idx]
+        if "." in expr:
+            return self._resolve_dot(expr, variables)
         if expr in variables:
             return variables[expr]
         return float(expr)
 
     def evaluate(self, node, variables):
         if isinstance(node, str):
-            try:
-                return self._resolve_value(node, variables)
-            except (ValueError, KeyError, IndexError):
-                return float(node)
-            return float(node)
+            return self._resolve_value(node, variables)
         if isinstance(node, (int, float)):
             return float(node)
         if isinstance(node, dict):

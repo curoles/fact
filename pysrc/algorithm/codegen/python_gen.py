@@ -114,7 +114,7 @@ def gen_for_each(step_as, ctx):
     if to_length:
         range_end = f"len({to_length})"
     elif to_var:
-        range_end = f"int({to_var}) + 1"
+        range_end = f"int({to_var})"
     else:
         range_end = "0"
 

@@ -127,7 +127,17 @@ class Fact:
 
         attrs = as_type[type_name]
         for attr_name in attrs:
-            as_type_val[attr_name] = attrs[attr_name]["value"]
+            attr_data = attrs[attr_name]
+            if "value" in attr_data:
+                as_type_val[attr_name] = attr_data["value"]
+            elif "as" in attr_data:
+                nested = {}
+                for nested_as in attr_data["as"]:
+                    nested_err, nested_type, nested_vals = self.parse_construct_tag_is_as_type(nested_as)
+                    if nested_err != 0:
+                        return (nested_err, type_name, {})
+                    nested.update(nested_vals)
+                as_type_val[attr_name] = nested
 
         return (err, type_name, as_type_val)
 

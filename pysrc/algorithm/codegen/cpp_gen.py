@@ -108,7 +108,7 @@ def gen_for_each(step_as, ctx):
     if to_length:
         condition = f"{index} < {to_length}.size()"
     elif to_var:
-        condition = f"{index} <= static_cast<int>({to_var})"
+        condition = f"{index} < static_cast<int>({to_var})"
     else:
         condition = f"{index} < 0"
 

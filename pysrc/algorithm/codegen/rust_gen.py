@@ -110,7 +110,7 @@ def gen_for_each(step_as, ctx):
     if to_length:
         range_end = f"{to_length}.len()"
     elif to_var:
-        range_end = f"({to_var} as usize + 1)"
+        range_end = f"({to_var} as usize)"
     else:
         range_end = "0"
 

@@ -1,6 +1,28 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 title: Knowledge Graph Entity
 description: Schema for fact kg entity YAML files
+
+$defs:
+  as_block:
+    type: array
+    description: Property overrides cast as a parent type
+    items:
+      type: object
+      description: >
+        Each item is a single-key map where the key is a type path
+        and the value is a map of property name to {value: ..., as: ...}
+      minProperties: 1
+      maxProperties: 1
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            value: {}
+            as:
+              $ref: "#/$defs/as_block"
+          additionalProperties: false
+
 type: array
 items:
   type: object
@@ -28,22 +50,7 @@ items:
                 - type: number
                 - type: array
             as:
-              type: array
-              description: Property overrides cast as a parent type
-              items:
-                type: object
-                description: >
-                  Each item is a single-key map where the key is a type path
-                  and the value is a map of property name to {value: ...}
-                minProperties: 1
-                maxProperties: 1
-                additionalProperties:
-                  type: object
-                  additionalProperties:
-                    type: object
-                    properties:
-                      value: {}
-                    additionalProperties: false
+              $ref: "#/$defs/as_block"
 
     part:
       type: string
@@ -66,21 +73,6 @@ items:
                 description: Property type, e.g. "str", "num", "list"
               value: {}
               as:
-                type: array
-                description: Property overrides cast as a parent type
-                items:
-                  type: object
-                  description: >
-                    Each item is a single-key map where the key is a type path
-                    and the value is a map of property name to {value: ...}
-                  minProperties: 1
-                  maxProperties: 1
-                  additionalProperties:
-                    type: object
-                    additionalProperties:
-                      type: object
-                      properties:
-                        value: {}
-                      additionalProperties: false
+                $ref: "#/$defs/as_block"
           - description: Shorthand form; type is deduced from value
             type: [string, number, array, "null"]
