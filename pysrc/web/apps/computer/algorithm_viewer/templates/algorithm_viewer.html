@@ -325,9 +325,15 @@
             .attr("rx", cornerRadius).attr("fill", color).attr("opacity", 0.85);
         }
 
+        var clipId = "clip-" + d.id;
+        el.append("clipPath").attr("id", clipId)
+          .append("rect").attr("width", w - 8).attr("height", h)
+          .attr("x", 4).attr("y", 0);
+
+        var textGroup = el.append("g").attr("clip-path", "url(#" + clipId + ")");
         var lines = d.label.split("\n");
         if (lines.length === 1) {
-          el.append("text")
+          textGroup.append("text")
             .attr("x", w / 2).attr("y", h / 2)
             .attr("text-anchor", "middle").attr("dominant-baseline", "central")
             .attr("fill", "white").attr("font-size", labelSize)
@@ -336,7 +342,7 @@
           var lineHeight = 14;
           var startY = h / 2 - (lines.length - 1) * lineHeight / 2;
           lines.forEach(function(line, idx) {
-            el.append("text")
+            textGroup.append("text")
               .attr("x", w / 2).attr("y", startY + idx * lineHeight)
               .attr("text-anchor", "middle").attr("dominant-baseline", "central")
               .attr("fill", "white").attr("font-size", labelSize)

@@ -5,6 +5,7 @@ STEP_SHAPES = {
     "computer/algorithm/assign": "rect",
     "computer/algorithm/assign_indexed": "rect",
     "computer/algorithm/if": "diamond",
+    "computer/algorithm/while": "hexagon",
     "computer/algorithm/indexed/for_each": "hexagon",
     "computer/algorithm/evaluate_expression": "rect",
     "computer/algorithm/evaluate_expression_fact": "rect",
@@ -70,13 +71,17 @@ class FlowLayout(Layout):
             self._place_if_branch(step_name, step_as, steps, diagram,
                                   row, branch_col, visited)
 
+        if step_type == "computer/algorithm/while":
+            next_row = self._place_for_each(step_name, step_as, steps,
+                                            diagram, row, branch_col, visited)
+
         if step_type == "computer/algorithm/indexed/for_each":
             next_row = self._place_for_each(step_name, step_as, steps,
                                             diagram, row, branch_col, visited)
 
         next_step = step_as.get("next", "")
         if next_step and next_step in steps:
-            edge_label = "done" if step_type == "computer/algorithm/indexed/for_each" else ""
+            edge_label = "done" if step_type in ("computer/algorithm/indexed/for_each", "computer/algorithm/while") else ""
             diagram.add_edge(step_name, next_step, label=edge_label)
             if next_step not in visited:
                 return self._place_chain(next_step, steps, diagram,
@@ -135,7 +140,7 @@ class FlowLayout(Layout):
             self._place_if_branch(step_name, step_as, steps, diagram,
                                   row, col + 1, visited)
 
-        if step_type == "computer/algorithm/indexed/for_each":
+        if step_type in ("computer/algorithm/indexed/for_each", "computer/algorithm/while"):
             next_row = self._place_for_each(step_name, step_as, steps,
                                             diagram, row, col + 1, visited)
 
@@ -156,11 +161,15 @@ class FlowLayout(Layout):
             frm = step_as.get("from", "")
             return f"{var} = {frm}"
         if step_type == "computer/algorithm/if":
-            args = step_as.get("condition_args", [])
-            cond = step_as.get("condition", "").rsplit("/", 1)[-1]
-            if len(args) >= 2:
-                return f"{args[0]} {cond}\n{args[1]}?"
-            return f"{cond}?"
+            desc = step_as.get("description", "")
+            if desc:
+                return desc + "?"
+            return "if?"
+        if step_type == "computer/algorithm/while":
+            desc = step_as.get("description", "")
+            if desc:
+                return "while " + desc
+            return "while"
         if step_type == "computer/algorithm/assign_indexed":
             container = step_as.get("container", "")
             idx = step_as.get("index", "")
@@ -178,6 +187,12 @@ class FlowLayout(Layout):
             return f"return {var}"
         if step_type == "computer/algorithm/evaluate_expression":
             result = step_as.get("result_variable", "")
+            desc = step_as.get("description", "")
+            if desc:
+                label = f"{result} = {desc}"
+                if len(label) > 25:
+                    label = label[:22] + "..."
+                return label
             return f"{result} = expr"
         if step_type == "computer/algorithm/evaluate_expression_fact":
             expr = step_as.get("expression_fact", "")

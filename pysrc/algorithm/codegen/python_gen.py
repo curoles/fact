@@ -83,14 +83,19 @@ def gen_assign_indexed(step_as, ctx):
     return [f"{container}[{index}] = {frm}"]
 
 
-def gen_if(step_as, ctx):
-    condition_path = step_as.get("condition", "")
-    args = step_as.get("condition_args", [])
-    symbol = resolve_op_symbol(ctx["kg"], condition_path)
-    left = str(args[0]) if len(args) > 0 else ""
-    right = str(args[1]) if len(args) > 1 else ""
+def condition_to_python(step_as, ctx):
+    """Convert condition_yaml to Python expression string."""
+    condition_yaml = step_as.get("condition_yaml", "")
+    if condition_yaml:
+        tree = yaml.safe_load(condition_yaml)
+        return expr_to_python(ctx["kg"], tree)
+    return "True"
 
-    lines = [f"if {left} {symbol} {right}:"]
+
+def gen_if(step_as, ctx):
+    cond_str = condition_to_python(step_as, ctx)
+
+    lines = [f"if {cond_str}:"]
 
     then_step = step_as.get("then", "")
     if then_step:
@@ -123,6 +128,16 @@ def gen_for_each(step_as, ctx):
     return lines
 
 
+def gen_while(step_as, ctx):
+    cond_str = condition_to_python(step_as, ctx)
+    lines = [f"while {cond_str}:"]
+    body_step = step_as.get("body", "")
+    if body_step:
+        body = generate_chain(body_step, ctx)
+        lines.extend(indent(body))
+    return lines
+
+
 def gen_evaluate_expression(step_as, ctx):
     result_var = step_as.get("result_variable", "result")
     expr_yaml = step_as.get("expression_yaml", "")
@@ -152,6 +167,7 @@ STEP_GENERATORS = {
     "computer/algorithm/assign": gen_assign,
     "computer/algorithm/assign_indexed": gen_assign_indexed,
     "computer/algorithm/if": gen_if,
+    "computer/algorithm/while": gen_while,
     "computer/algorithm/indexed/for_each": gen_for_each,
     "computer/algorithm/evaluate_expression": gen_evaluate_expression,
     "computer/algorithm/evaluate_expression_fact": gen_evaluate_expression_fact,

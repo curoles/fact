@@ -12,6 +12,7 @@ SYMBOL_TO_FN = {
     "==": operator.eq,
     "<": operator.lt,
     ">": operator.gt,
+    ">=": operator.ge,
     "&": operator.and_,
     "neg": operator.neg,
     "math.sqrt": math.sqrt,
@@ -45,10 +46,25 @@ class ExpressionEvaluator:
         self._op_cache[op_path] = fn
         return fn
 
+    def _resolve_value(self, expr, variables):
+        """Resolve a value string — handles variables and array[index] access."""
+        if isinstance(expr, (int, float)):
+            return expr
+        expr = str(expr)
+        if "[" in expr:
+            arr_name, idx_str = expr.rstrip("]").split("[")
+            idx = int(variables[idx_str]) if idx_str in variables else int(idx_str)
+            return variables[arr_name][idx]
+        if expr in variables:
+            return variables[expr]
+        return float(expr)
+
     def evaluate(self, node, variables):
         if isinstance(node, str):
-            if node in variables:
-                return variables[node]
+            try:
+                return self._resolve_value(node, variables)
+            except (ValueError, KeyError, IndexError):
+                return float(node)
             return float(node)
         if isinstance(node, (int, float)):
             return float(node)

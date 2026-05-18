@@ -40,6 +40,8 @@ class AlgorithmExecutor:
             result = self._exec_assign(step_as, variables)
         elif step_type == "computer/algorithm/if":
             result = self._exec_if(step_as, variables, steps)
+        elif step_type == "computer/algorithm/while":
+            result = self._exec_while(step_as, variables, steps)
         elif step_type == "computer/algorithm/indexed/for_each":
             result = self._exec_for_each(step_as, variables, steps)
         elif step_type == "computer/algorithm/assign_indexed":
@@ -78,15 +80,27 @@ class AlgorithmExecutor:
         from_expr = step_as.get("from", "")
         variables[var_name] = self._resolve_value(from_expr, variables)
 
-    def _exec_if(self, step_as, variables, steps):
-        condition_path = step_as.get("condition", "")
-        args = step_as.get("condition_args", [])
-        op_fn = self.evaluator.resolve_operation(condition_path)
-        if op_fn is None:
-            raise ValueError(f"Unknown operation: {condition_path}")
+    def _eval_condition(self, step_as, variables):
+        condition_yaml = step_as.get("condition_yaml", "")
+        if condition_yaml:
+            import yaml
+            tree = yaml.safe_load(condition_yaml)
+            return self.evaluator.evaluate(tree, dict(variables))
+        return False
 
-        resolved = [self._resolve_value(a, variables) for a in args]
-        if op_fn(resolved[0], resolved[1]):
+    MAX_WHILE_ITERATIONS = 10000
+
+    def _exec_while(self, step_as, variables, steps):
+        body_step = step_as.get("body", "")
+        iterations = 0
+        while self._eval_condition(step_as, variables):
+            if body_step and body_step in steps:
+                self._execute_step(body_step, steps, variables)
+            iterations += 1
+            assert iterations < self.MAX_WHILE_ITERATIONS, "while loop exceeded max iterations"
+
+    def _exec_if(self, step_as, variables, steps):
+        if self._eval_condition(step_as, variables):
             then_step = step_as.get("then", "")
             if then_step and then_step in steps:
                 return self._execute_step(then_step, steps, variables)

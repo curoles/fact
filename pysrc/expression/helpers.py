@@ -2,7 +2,12 @@ import yaml
 from fact import Fact
 
 
+PRIMITIVES = {"str", "num", "list"}
+
+
 def load_fact_info(kg, path):
+    if path in PRIMITIVES:
+        return None
     if kg.load(path) != 0:
         return None
     fact = Fact(kg, path)
