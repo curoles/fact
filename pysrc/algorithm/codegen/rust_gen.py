@@ -1,12 +1,14 @@
-"""Generate C++ function from algorithm fact.
+"""Generate Rust function from algorithm fact.
 
 Uses the same operation symbol resolution as python_gen
 since basic operator symbols (+, -, >, <) are identical
-in C++ and Python. Syntactic differences handled here:
-  for loops   → C-style for(int i = from; i <= to; i++)
-  len()       → .size()
+in Rust and Python. Rust-specific syntax:
+  types       → generic T with Copy + PartialOrd
+  for loops   → for i in from..to
+  while       → while condition
   blocks      → curly braces
-  statements  → semicolons
+  variables   → let mut, reassignment without let
+  arrays      → Vec<T>, .len()
 """
 
 import yaml
@@ -14,13 +16,15 @@ from expression import load_fact_info
 from algorithm.codegen.python_gen import resolve_op_symbol
 
 
-# --- expression tree to C++ string ---
+# --- expression tree to Rust string ---
 
-def expr_to_cpp(kg, node):
-    """Convert expression tree node to C++ expression string."""
+def expr_to_rust(kg, node):
+    """Convert expression tree node to Rust expression string."""
     if isinstance(node, str):
         return node
     if isinstance(node, (int, float)):
+        if isinstance(node, float):
+            return f"{node}_f64"
         return str(node)
     if not isinstance(node, dict):
         return str(node)
@@ -28,11 +32,11 @@ def expr_to_cpp(kg, node):
     op_path = next(iter(node))
     operands = node[op_path]
     symbol = resolve_op_symbol(kg, op_path)
-    parts = [expr_to_cpp(kg, o) for o in operands]
+    parts = [expr_to_rust(kg, o) for o in operands]
 
     if len(parts) == 1:
         if symbol == "len":
-            return f"{parts[0]}.size()"
+            return f"{parts[0]}.len()"
         if symbol == "neg":
             return f"-{parts[0]}"
         return f"{symbol}({parts[0]})"
@@ -48,16 +52,24 @@ def indent(lines):
 
 
 # --- step generators ---
-# Each takes (step_as, ctx) and returns list of C++ code lines.
+
+def condition_to_rust(step_as, ctx):
+    """Convert condition_yaml to Rust expression string."""
+    condition_yaml = step_as.get("condition_yaml", "")
+    if condition_yaml:
+        tree = yaml.safe_load(condition_yaml)
+        return expr_to_rust(ctx["kg"], tree)
+    return "true"
+
 
 def gen_assign(step_as, ctx):
     var = step_as.get("variable", "")
     frm = step_as.get("from", "")
-    declared = ctx.setdefault("declared", set())
+    declared = ctx.get("declared", set())
     if var in declared:
         return [f"{var} = {frm};"]
     declared.add(var)
-    return [f"auto {var} = {frm};"]
+    return [f"let mut {var} = {frm};"]
 
 
 def gen_assign_indexed(step_as, ctx):
@@ -67,19 +79,9 @@ def gen_assign_indexed(step_as, ctx):
     return [f"{container}[{index}] = {frm};"]
 
 
-def condition_to_cpp(step_as, ctx):
-    """Convert condition_yaml to C++ expression string."""
-    condition_yaml = step_as.get("condition_yaml", "")
-    if condition_yaml:
-        tree = yaml.safe_load(condition_yaml)
-        return expr_to_cpp(ctx["kg"], tree)
-    return "true"
-
-
 def gen_if(step_as, ctx):
-    cond_str = condition_to_cpp(step_as, ctx)
-
-    lines = [f"if ({cond_str}) {{"]
+    cond_str = condition_to_rust(step_as, ctx)
+    lines = [f"if {cond_str} {{"]
     then_step = step_as.get("then", "")
     if then_step:
         body = generate_chain(then_step, ctx)
@@ -89,8 +91,8 @@ def gen_if(step_as, ctx):
 
 
 def gen_while(step_as, ctx):
-    cond_str = condition_to_cpp(step_as, ctx)
-    lines = [f"while ({cond_str}) {{"]
+    cond_str = condition_to_rust(step_as, ctx)
+    lines = [f"while {cond_str} {{"]
     body_step = step_as.get("body", "")
     if body_step:
         body = generate_chain(body_step, ctx)
@@ -106,13 +108,13 @@ def gen_for_each(step_as, ctx):
     to_var = step_as.get("to", "")
 
     if to_length:
-        condition = f"{index} < {to_length}.size()"
+        range_end = f"{to_length}.len()"
     elif to_var:
-        condition = f"{index} <= static_cast<int>({to_var})"
+        range_end = f"({to_var} as usize + 1)"
     else:
-        condition = f"{index} < 0"
+        range_end = "0"
 
-    lines = [f"for (int {index} = {from_val}; {condition}; {index}++) {{"]
+    lines = [f"for {index} in {from_val}..{range_end} {{"]
     body_step = step_as.get("body", "")
     if body_step:
         body = generate_chain(body_step, ctx)
@@ -126,26 +128,26 @@ def gen_evaluate_expression(step_as, ctx):
     expr_yaml = step_as.get("expression_yaml", "")
     if expr_yaml:
         tree = yaml.safe_load(expr_yaml)
-        expr_str = expr_to_cpp(ctx["kg"], tree)
+        expr_str = expr_to_rust(ctx["kg"], tree)
     else:
-        expr_str = "0"
-    declared = ctx.setdefault("declared", set())
+        expr_str = "Default::default()"
+    declared = ctx.get("declared", set())
     if result_var in declared:
         return [f"{result_var} = {expr_str};"]
     declared.add(result_var)
-    return [f"auto {result_var} = {expr_str};"]
+    return [f"let mut {result_var} = {expr_str};"]
 
 
 def gen_evaluate_expression_fact(step_as, ctx):
     result_var = step_as.get("result_variable", "result")
     expr_fact = step_as.get("expression_fact", "")
     return [f"// TODO: evaluate expression fact '{expr_fact}'",
-            f"auto {result_var} = 0;"]
+            f"let mut {result_var} = Default::default();"]
 
 
 def gen_return(step_as, ctx):
     var = step_as.get("variable", "")
-    return [f"return {var};"]
+    return [f"{var}"]
 
 
 # --- dispatch table ---
@@ -165,7 +167,7 @@ STEP_GENERATORS = {
 # --- chain walking ---
 
 def generate_chain(step_name, ctx):
-    """Generate C++ code for a step and follow its 'next' link."""
+    """Generate Rust code for a step and follow its 'next' link."""
     steps = ctx["steps"]
     if step_name not in steps:
         return []
@@ -189,8 +191,8 @@ def generate_chain(step_name, ctx):
 
 # --- main entry point ---
 
-def generate_cpp(kg, algo_path):
-    """Generate a C++ template function from an algorithm fact."""
+def generate_rust(kg, algo_path):
+    """Generate a Rust generic function from an algorithm fact."""
     info = load_fact_info(kg, algo_path)
     if info is None:
         raise ValueError(f"Cannot load algorithm: {algo_path}")
@@ -204,7 +206,34 @@ def generate_cpp(kg, algo_path):
     params = []
     for attr, val in has.items():
         if val.get("type") == "list" and "val" not in val:
-            params.append(f"std::vector<T>& {attr}")
+            params.append(f"{attr}: &mut Vec<T>")
+
+    # collect loop index names
+    loop_indices = set()
+    for attr, val in has.items():
+        if not attr.startswith("step_"):
+            continue
+        step_type = val.get("type", "")
+        if step_type == "computer/algorithm/indexed/for_each":
+            step_as = val.get("val_as", {}).get(step_type, {})
+            idx = step_as.get("index", "")
+            if idx:
+                loop_indices.add(idx)
+
+    # collect declared variables, determine type (T vs i64) from description
+    INDEX_HINTS = {"index", "bound", "position", "next"}
+    variables = []
+    var_types = {}
+    for attr, val in has.items():
+        if val.get("type") != "math/variable" or attr in loop_indices:
+            continue
+        variables.append(attr)
+        desc = val.get("val_as", {}).get("math/variable", {}).get("description", "").lower()
+        if any(hint in desc for hint in INDEX_HINTS):
+            var_types[attr] = "i64"
+        else:
+            var_types[attr] = "T"
+    declared = set(variables) | loop_indices
 
     # collect steps
     steps = {attr: val for attr, val in has.items() if attr.startswith("step_")}
@@ -218,35 +247,18 @@ def generate_cpp(kg, algo_path):
     if first_step is None and steps:
         first_step = next(iter(steps))
 
-    # collect loop index names to exclude from pre-declarations
-    loop_indices = set()
-    for attr, val in has.items():
-        if not attr.startswith("step_"):
-            continue
-        step_type = val.get("type", "")
-        if step_type in ("computer/algorithm/indexed/for_each",):
-            step_as = val.get("val_as", {}).get(step_type, {})
-            idx = step_as.get("index", "")
-            if idx:
-                loop_indices.add(idx)
-
-    # collect declared variables — pre-declare at top to avoid scope issues
-    variables = [attr for attr, val in has.items()
-                 if val.get("type") == "math/variable" and attr not in loop_indices]
-    declared = set(variables) | loop_indices
-
     ctx = {"kg": kg, "steps": steps, "declared": declared}
 
     # generate function
     lines = []
     if description:
-        lines.append(f"// {description}")
-    lines.append("template<typename T>")
-    lines.append(f"auto {func_name}({', '.join(params)}) {{")
+        lines.append(f"/// {description}")
+    lines.append(f"fn {func_name}<T: Copy + PartialOrd + Default + std::ops::Sub<Output=T> + std::ops::Add<Output=T> + From<i32>>({', '.join(params)}) -> T {{")
 
-    # declare all variables at function scope
+    # declare variables at function scope with correct types
     for var in variables:
-        lines.extend(indent([f"T {var} = {{}};"]))
+        vtype = var_types.get(var, "T")
+        lines.extend(indent([f"let mut {var}: {vtype} = Default::default();"]))
 
     body = generate_chain(first_step, ctx)
     lines.extend(indent(body))

@@ -115,9 +115,9 @@
          {% if view == 'text' %}background: var(--pico-primary); color: var(--pico-primary-inverse);{% endif %}">Text</a>
       <a href="?fact={{ fact_path }}&view=python"
          style="padding: 0.4em 1em; border-radius: 4px; text-decoration: none;
-         {% if view in ('python', 'cpp') %}background: var(--pico-primary); color: var(--pico-primary-inverse);{% endif %}">Code</a>
+         {% if view in ('python', 'cpp', 'rust') %}background: var(--pico-primary); color: var(--pico-primary-inverse);{% endif %}">Code</a>
     </div>
-    {% if view in ('python', 'cpp') %}
+    {% if view in ('python', 'cpp', 'rust') %}
     <div style="display: flex; gap: 0.3em; margin-bottom: 1em; margin-left: 1em;">
       <a href="?fact={{ fact_path }}&view=python"
          style="padding: 0.3em 0.8em; border-radius: 4px; text-decoration: none; font-size: 0.9em;
@@ -125,6 +125,9 @@
       <a href="?fact={{ fact_path }}&view=cpp"
          style="padding: 0.3em 0.8em; border-radius: 4px; text-decoration: none; font-size: 0.9em;
          {% if view == 'cpp' %}background: var(--pico-secondary); color: var(--pico-secondary-inverse);{% endif %}">C++</a>
+      <a href="?fact={{ fact_path }}&view=rust"
+         style="padding: 0.3em 0.8em; border-radius: 4px; text-decoration: none; font-size: 0.9em;
+         {% if view == 'rust' %}background: var(--pico-secondary); color: var(--pico-secondary-inverse);{% endif %}">Rust</a>
     </div>
     {% endif %}
     {% endif %}
@@ -180,7 +183,7 @@
     </details>
     {% endfor %}
 
-    {% elif view in ('python', 'cpp') and generated_code %}
+    {% elif view in ('python', 'cpp', 'rust') and generated_code %}
     <pre style="padding: 1em; border-radius: var(--pico-border-radius); overflow-x: auto;"><code>{{ generated_code }}</code></pre>
 
     {% elif diagram_data %}

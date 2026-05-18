@@ -10,6 +10,7 @@ from expression import load_fact_info
 from diagram import FlowLayout, to_json
 from algorithm.codegen.python_gen import generate_python
 from algorithm.codegen.cpp_gen import generate_cpp
+from algorithm.codegen.rust_gen import generate_rust
 
 router = APIRouter(prefix="/apps/computer/algorithm_viewer")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
@@ -98,6 +99,11 @@ def algorithm_viewer(request: Request):
                 elif view == "cpp":
                     try:
                         generated_code = generate_cpp(kg, fact_path)
+                    except Exception as e:
+                        error = f"Code generation error: {e}"
+                elif view == "rust":
+                    try:
+                        generated_code = generate_rust(kg, fact_path)
                     except Exception as e:
                         error = f"Code generation error: {e}"
 
