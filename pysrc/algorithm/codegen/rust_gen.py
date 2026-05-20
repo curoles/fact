@@ -18,10 +18,15 @@ from algorithm.codegen.python_gen import resolve_op_symbol
 
 # --- expression tree to Rust string ---
 
+LOOP_VARS = set()
+
 def expr_to_rust(kg, node):
     """Convert expression tree node to Rust expression string."""
     if isinstance(node, str):
-        return node
+        s = _rust_array_access(node)
+        if s in LOOP_VARS and "[" not in s:
+            return f"({s} as i64)"
+        return s
     if isinstance(node, (int, float)):
         if isinstance(node, float):
             return f"{node}_f64"
@@ -34,9 +39,13 @@ def expr_to_rust(kg, node):
     symbol = resolve_op_symbol(kg, op_path)
     parts = [expr_to_rust(kg, o) for o in operands]
 
+    # Rust uses && for logical AND, not & (bitwise)
+    if symbol == "&":
+        symbol = "&&"
+
     if len(parts) == 1:
         if symbol == "len":
-            return f"{parts[0]}.len()"
+            return f"{parts[0]}.len() as i64"
         if symbol == "neg":
             return f"-{parts[0]}"
         return f"{symbol}({parts[0]})"
@@ -62,9 +71,17 @@ def condition_to_rust(step_as, ctx):
     return "true"
 
 
+def _rust_array_access(s):
+    """Convert array[idx] to array[idx as usize] for Rust."""
+    if "[" not in s:
+        return s
+    arr_part, idx_part = s.rstrip("]").split("[")
+    return f"{arr_part}[{idx_part} as usize]"
+
+
 def gen_assign(step_as, ctx):
     var = step_as.get("variable", "")
-    frm = step_as.get("from", "")
+    frm = _rust_array_access(step_as.get("from", ""))
     declared = ctx.get("declared", set())
     if var in declared:
         return [f"{var} = {frm};"]
@@ -75,12 +92,19 @@ def gen_assign(step_as, ctx):
 def gen_assign_indexed(step_as, ctx):
     container = step_as.get("container", "")
     index = step_as.get("index", "")
-    frm = step_as.get("from", "")
-    return [f"{container}[{index}] = {frm};"]
+    frm = _rust_array_access(step_as.get("from", ""))
+    return [f"{container}[{index} as usize] = {frm};"]
+
+
+def _strip_outer_parens(s):
+    """Remove outer parentheses if present: (expr) → expr."""
+    if s.startswith("(") and s.endswith(")"):
+        return s[1:-1]
+    return s
 
 
 def gen_if(step_as, ctx):
-    cond_str = condition_to_rust(step_as, ctx)
+    cond_str = _strip_outer_parens(condition_to_rust(step_as, ctx))
     lines = [f"if {cond_str} {{"]
     then_step = step_as.get("then", "")
     if then_step:
@@ -91,7 +115,7 @@ def gen_if(step_as, ctx):
 
 
 def gen_while(step_as, ctx):
-    cond_str = condition_to_rust(step_as, ctx)
+    cond_str = _strip_outer_parens(condition_to_rust(step_as, ctx))
     lines = [f"while {cond_str} {{"]
     body_step = step_as.get("body", "")
     if body_step:
@@ -107,6 +131,12 @@ def gen_for_each(step_as, ctx):
     to_length = step_as.get("to_length", "")
     to_var = step_as.get("to", "")
 
+    # cast from_val to usize if it's a variable name
+    if isinstance(from_val, str) and not from_val.isdigit():
+        range_start = f"({from_val} as usize)"
+    else:
+        range_start = str(from_val)
+
     if to_length:
         range_end = f"{to_length}.len()"
     elif to_var:
@@ -114,7 +144,7 @@ def gen_for_each(step_as, ctx):
     else:
         range_end = "0"
 
-    lines = [f"for {index} in {from_val}..{range_end} {{"]
+    lines = [f"for {index} in {range_start}..{range_end} {{"]
     body_step = step_as.get("body", "")
     if body_step:
         body = generate_chain(body_step, ctx)
@@ -278,13 +308,42 @@ def generate_rust(kg, algo_path):
     if first_step is None and steps:
         first_step = next(iter(steps))
 
+    LOOP_VARS.clear()
+    LOOP_VARS.update(loop_indices)
+
     ctx = {"kg": kg, "steps": steps, "declared": declared}
 
     # generate function
     lines = []
     if description:
         lines.append(f"/// {description}")
-    lines.append(f"fn {func_name}<T: Copy + PartialOrd + Default + std::ops::Sub<Output=T> + std::ops::Add<Output=T> + From<i32>>({', '.join(params)}) -> T {{")
+    # determine return type from step_return variable
+    return_type = "T"
+    return_var = ""
+    for attr, val in steps.items():
+        step_type = val.get("type", "")
+        if step_type == "computer/algorithm/return":
+            return_var = val.get("val_as", {}).get(step_type, {}).get("variable", "")
+            if return_var in var_types:
+                return_type = var_types[return_var]
+            elif return_var in [a for a, v in has.items() if v.get("type") == "list"]:
+                return_type = "&Vec<T>"
+
+    # determine needed trait bounds from operations used
+    traits = ["Copy", "PartialOrd", "Default"]
+    # check if arithmetic operations are used in expressions
+    all_yaml = str(has)
+    if "subtract" in all_yaml or "add" in all_yaml:
+        traits.extend(["std::ops::Sub<Output=T>", "std::ops::Add<Output=T>"])
+    if "From" in all_yaml or "length" in all_yaml:
+        traits.append("From<i32>")
+
+    params_str = ", ".join(params)
+    traits_str = " + ".join(traits)
+    lines.append(f"fn {func_name}<T>({params_str}) -> {return_type}")
+    lines.append(f"where")
+    lines.append(f"    T: {traits_str},")
+    lines.append(f"{{")
 
     # declare variables at function scope with correct types
     for var in variables:
