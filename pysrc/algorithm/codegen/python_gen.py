@@ -44,6 +44,7 @@ def _translate_python(s):
     input.from → input.from_
     input.array[j] → input.array[j] (no keyword)
     """
+    s = str(s)
     if "." not in s:
         return s
     bracket_part = ""

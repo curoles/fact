@@ -73,6 +73,7 @@ def condition_to_rust(step_as, ctx):
 
 def _rust_array_access(s):
     """Convert array[idx] to array[idx as usize] for Rust."""
+    s = str(s)
     if "[" not in s:
         return s
     arr_part, idx_part = s.rstrip("]").split("[")
