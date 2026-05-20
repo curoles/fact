@@ -220,7 +220,8 @@
         rect: "#2196F3",
         diamond: "#FF9800",
         hexagon: "#9C27B0",
-        rounded: "#4CAF50"
+        rounded: "#4CAF50",
+        subroutine: "#E91E63"
       };
 
       var nodeMap = {};
@@ -323,6 +324,14 @@
               hexIndent+",0 "+(w-hexIndent)+",0 "+w+","+(h/2)+" "+
               (w-hexIndent)+","+h+" "+hexIndent+","+h+" 0,"+(h/2))
             .attr("fill", color).attr("opacity", 0.85);
+        } else if (d.type === "subroutine") {
+          el.append("rect").attr("width", w).attr("height", h)
+            .attr("rx", cornerRadius).attr("fill", color).attr("opacity", 0.85);
+          var bar = 8;
+          el.append("line").attr("x1", bar).attr("y1", 0).attr("x2", bar).attr("y2", h)
+            .attr("stroke", "white").attr("stroke-width", 1.5).attr("opacity", 0.6);
+          el.append("line").attr("x1", w - bar).attr("y1", 0).attr("x2", w - bar).attr("y2", h)
+            .attr("stroke", "white").attr("stroke-width", 1.5).attr("opacity", 0.6);
         } else {
           el.append("rect").attr("width", w).attr("height", h)
             .attr("rx", cornerRadius).attr("fill", color).attr("opacity", 0.85);

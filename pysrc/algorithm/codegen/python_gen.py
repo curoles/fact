@@ -35,10 +35,31 @@ def resolve_op_symbol(kg, op_path):
 
 UNARY_FUNCTIONS = {"len", "math.sqrt", "math.sin"}
 
+PYTHON_KEYWORDS = {"from": "from_", "in": "in_", "class": "class_", "type": "type_"}
+
+
+def _translate_python(s):
+    """Translate dot notation field names that are Python keywords.
+
+    input.from → input.from_
+    input.array[j] → input.array[j] (no keyword)
+    """
+    if "." not in s:
+        return s
+    bracket_part = ""
+    base = s
+    if "[" in s:
+        base, bracket_part = s.split("[", 1)
+        bracket_part = "[" + bracket_part
+    parts = base.split(".")
+    translated = [PYTHON_KEYWORDS.get(p, p) for p in parts]
+    return ".".join(translated) + bracket_part
+
+
 def expr_to_python(kg, node):
     """Convert expression tree node to Python expression string."""
     if isinstance(node, str):
-        return node
+        return _translate_python(node)
     if isinstance(node, (int, float)):
         return str(node)
     if not isinstance(node, dict):
@@ -72,14 +93,14 @@ def indent(lines):
 
 def gen_assign(step_as, ctx):
     var = step_as.get("variable", "")
-    frm = step_as.get("from", "")
+    frm = _translate_python(step_as.get("from", ""))
     return [f"{var} = {frm}"]
 
 
 def gen_assign_indexed(step_as, ctx):
-    container = step_as.get("container", "")
-    index = step_as.get("index", "")
-    frm = step_as.get("from", "")
+    container = _translate_python(step_as.get("container", ""))
+    index = _translate_python(step_as.get("index", ""))
+    frm = _translate_python(step_as.get("from", ""))
     return [f"{container}[{index}] = {frm}"]
 
 
@@ -138,6 +159,34 @@ def gen_while(step_as, ctx):
     return lines
 
 
+def _format_arg_python(arg_val):
+    """Format a call argument as Python SimpleNamespace."""
+    if isinstance(arg_val, dict):
+        fields = ", ".join(
+            f"{PYTHON_KEYWORDS.get(k, k)}={v}" for k, v in arg_val.items())
+        return f"SimpleNamespace({fields})"
+    return str(arg_val)
+
+
+def gen_call(step_as, ctx):
+    algo_path = step_as.get("algorithm", "")
+    result_var = step_as.get("result_variable", "")
+    func_name = algo_path.rsplit("/", 1)[-1]
+
+    step = ctx.get("_current_step", {})
+    args = []
+    for as_key, as_vals in step.get("val_as", {}).items():
+        if as_key == "computer/algorithm/call":
+            continue
+        for arg_name, arg_val in as_vals.items():
+            args.append(f"{arg_name}={_format_arg_python(arg_val)}")
+
+    call_str = f"{func_name}({', '.join(args)})"
+    if result_var:
+        return [f"{result_var} = {call_str}"]
+    return [call_str]
+
+
 def gen_evaluate_expression(step_as, ctx):
     result_var = step_as.get("result_variable", "result")
     expr_yaml = step_as.get("expression_yaml", "")
@@ -167,6 +216,7 @@ STEP_GENERATORS = {
     "computer/algorithm/assign": gen_assign,
     "computer/algorithm/assign_indexed": gen_assign_indexed,
     "computer/algorithm/if": gen_if,
+    "computer/algorithm/call": gen_call,
     "computer/algorithm/while": gen_while,
     "computer/algorithm/indexed/for_each": gen_for_each,
     "computer/algorithm/evaluate_expression": gen_evaluate_expression,
@@ -194,6 +244,7 @@ def generate_chain(step_name, ctx):
     if generator is None:
         return [f"# unknown step type: {step_type}"]
 
+    ctx["_current_step"] = step
     lines = generator(step_as, ctx)
 
     # follow the next link
@@ -221,11 +272,18 @@ def generate_python(kg, algo_path):
     description = has.get("description", {}).get("val", "")
     func_name = algo_path.rsplit("/", 1)[-1]
 
-    # input parameters — list-typed has entries without values (inputs, not metadata)
+    # input parameters — has entries that are inputs (list or ADT types, no value)
+    INPUT_TYPES = {"list"}
     params = []
     for attr, val in has.items():
-        if val.get("type") == "list" and "val" not in val:
+        vtype = val.get("type", "")
+        if "val" in val or attr.startswith("step_"):
+            continue
+        if vtype == "list":
             params.append(f"{attr}: list")
+        elif vtype and vtype not in ("str", "num", "math/variable", "math/constant") \
+                and not vtype.startswith("computer/algorithm/"):
+            params.append(attr)
 
     # collect steps
     steps = {attr: val for attr, val in has.items() if attr.startswith("step_")}

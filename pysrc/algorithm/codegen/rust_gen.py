@@ -145,6 +145,35 @@ def gen_evaluate_expression_fact(step_as, ctx):
             f"let mut {result_var} = Default::default();"]
 
 
+def _format_arg_rust(arg_val):
+    """Format a call argument as Rust code."""
+    if isinstance(arg_val, dict):
+        fields = ", ".join(f"{k}: {v}" for k, v in arg_val.items())
+        return "Slice { " + fields + " }"
+    return str(arg_val)
+
+
+def gen_call(step_as, ctx):
+    algo_path = step_as.get("algorithm", "")
+    result_var = step_as.get("result_variable", "")
+    func_name = algo_path.rsplit("/", 1)[-1]
+
+    step = ctx.get("_current_step", {})
+    args = []
+    for as_key, as_vals in step.get("val_as", {}).items():
+        if as_key == "computer/algorithm/call":
+            continue
+        for arg_name, arg_val in as_vals.items():
+            args.append(_format_arg_rust(arg_val))
+
+    call_str = f"{func_name}({', '.join(args)})"
+    declared = ctx.get("declared", set())
+    if result_var in declared:
+        return [f"{result_var} = {call_str};"]
+    declared.add(result_var)
+    return [f"let mut {result_var} = {call_str};"]
+
+
 def gen_return(step_as, ctx):
     var = step_as.get("variable", "")
     return [f"{var}"]
@@ -156,6 +185,7 @@ STEP_GENERATORS = {
     "computer/algorithm/assign": gen_assign,
     "computer/algorithm/assign_indexed": gen_assign_indexed,
     "computer/algorithm/if": gen_if,
+    "computer/algorithm/call": gen_call,
     "computer/algorithm/while": gen_while,
     "computer/algorithm/indexed/for_each": gen_for_each,
     "computer/algorithm/evaluate_expression": gen_evaluate_expression,
@@ -180,6 +210,7 @@ def generate_chain(step_name, ctx):
     if generator is None:
         return [f"// unknown step type: {step_type}"]
 
+    ctx["_current_step"] = step
     lines = generator(step_as, ctx)
 
     next_step = step_as.get("next", "")

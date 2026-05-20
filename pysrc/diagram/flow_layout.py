@@ -7,6 +7,7 @@ STEP_SHAPES = {
     "computer/algorithm/if": "diamond",
     "computer/algorithm/while": "hexagon",
     "computer/algorithm/indexed/for_each": "hexagon",
+    "computer/algorithm/call": "subroutine",
     "computer/algorithm/evaluate_expression": "rect",
     "computer/algorithm/evaluate_expression_fact": "rect",
     "computer/algorithm/return": "rounded",
@@ -194,6 +195,14 @@ class FlowLayout(Layout):
                     label = label[:22] + "..."
                 return label
             return f"{result} = expr"
+        if step_type == "computer/algorithm/call":
+            algo = step_as.get("algorithm", "").rsplit("/", 1)[-1]
+            result = step_as.get("result_variable", "")
+            desc = step_as.get("description", "")
+            if desc:
+                line2 = desc if len(desc) <= 22 else desc[:19] + "..."
+                return f"{result} =\n{line2}"
+            return f"{result} =\n{algo}()"
         if step_type == "computer/algorithm/evaluate_expression_fact":
             expr = step_as.get("expression_fact", "")
             result = step_as.get("result_variable", "")
