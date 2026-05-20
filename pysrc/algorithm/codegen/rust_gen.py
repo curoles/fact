@@ -263,10 +263,11 @@ def generate_rust(kg, algo_path):
     description = has.get("description", {}).get("val", "")
     func_name = algo_path.rsplit("/", 1)[-1]
 
-    # input parameters
+    # input parameters — math/variable with data_type list
     params = []
     for attr, val in has.items():
-        if val.get("type") == "list" and "val" not in val:
+        data_type = val.get("val_as", {}).get("math/variable", {}).get("data_type", "")
+        if data_type == "list":
             params.append(f"{attr}: &mut Vec<T>")
 
     # collect loop index names
@@ -326,7 +327,8 @@ def generate_rust(kg, algo_path):
             return_var = val.get("val_as", {}).get(step_type, {}).get("variable", "")
             if return_var in var_types:
                 return_type = var_types[return_var]
-            elif return_var in [a for a, v in has.items() if v.get("type") == "list"]:
+            elif return_var in [a for a, v in has.items()
+                            if v.get("val_as", {}).get("math/variable", {}).get("data_type") == "list"]:
                 return_type = "&Vec<T>"
 
     # determine needed trait bounds from operations used

@@ -272,14 +272,14 @@ def generate_python(kg, algo_path):
     description = has.get("description", {}).get("val", "")
     func_name = algo_path.rsplit("/", 1)[-1]
 
-    # input parameters — has entries that are inputs (list or ADT types, no value)
-    INPUT_TYPES = {"list"}
+    # input parameters — math/variable with data_type list, or ADT types
     params = []
     for attr, val in has.items():
-        vtype = val.get("type", "")
         if "val" in val or attr.startswith("step_"):
             continue
-        if vtype == "list":
+        vtype = val.get("type", "")
+        data_type = val.get("val_as", {}).get("math/variable", {}).get("data_type", "")
+        if data_type == "list":
             params.append(f"{attr}: list")
         elif vtype and vtype not in ("str", "num", "math/variable", "math/constant") \
                 and not vtype.startswith("computer/algorithm/"):

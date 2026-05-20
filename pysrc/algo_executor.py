@@ -20,7 +20,7 @@ class AlgorithmExecutor:
                 steps[attr] = val
 
         first_step = None
-        for name in ["step_init", "step_start"]:
+        for name in ["step_init", "step_init_result", "step_start"]:
             if name in steps:
                 first_step = name
                 break
@@ -48,6 +48,8 @@ class AlgorithmExecutor:
             result = self._exec_assign_indexed(step_as, variables)
         elif step_type == "computer/algorithm/swap":
             result = self._exec_swap(step_as, variables)
+        elif step_type == "computer/algorithm/append":
+            result = self._exec_append(step_as, variables)
         elif step_type == "computer/algorithm/call":
             result = self._exec_call(step, variables)
         elif step_type == "computer/algorithm/evaluate_expression":
@@ -73,7 +75,11 @@ class AlgorithmExecutor:
     def _resolve_value(self, expr, variables):
         if isinstance(expr, (int, float)):
             return expr
+        if isinstance(expr, list):
+            return list(expr)
         expr = str(expr)
+        if expr == "[]":
+            return []
         if "[" in expr:
             arr_part, idx_str = expr.rstrip("]").split("[")
             idx = int(self._resolve_value(idx_str, variables)) if idx_str in variables else int(idx_str)
@@ -118,6 +124,11 @@ class AlgorithmExecutor:
         if result_var:
             variables[result_var] = result
 
+    def _exec_append(self, step_as, variables):
+        list_name = step_as.get("list", "")
+        val = self._resolve_value(step_as.get("value", ""), variables)
+        variables[list_name].append(val)
+
     def _exec_assign(self, step_as, variables):
         var_name = step_as.get("variable", "")
         from_expr = step_as.get("from", "")
@@ -147,6 +158,10 @@ class AlgorithmExecutor:
             then_step = step_as.get("then", "")
             if then_step and then_step in steps:
                 return self._execute_step(then_step, steps, variables)
+        else:
+            else_step = step_as.get("else", "")
+            if else_step and else_step in steps:
+                return self._execute_step(else_step, steps, variables)
 
     def _exec_for_each(self, step_as, variables, steps):
         index_name = step_as.get("index", "i")

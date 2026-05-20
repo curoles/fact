@@ -13,6 +13,7 @@ SYMBOL_TO_FN = {
     "<": operator.lt,
     ">": operator.gt,
     ">=": operator.ge,
+    "<=": operator.le,
     "&": operator.and_,
     "neg": operator.neg,
     "math.sqrt": math.sqrt,
