@@ -67,6 +67,12 @@ def gen_assign_indexed(step_as, ctx):
     return [f"{container}[{index}] = {frm};"]
 
 
+def gen_append(step_as, ctx):
+    lst = step_as.get("list", "")
+    val = step_as.get("value", "")
+    return [f"{lst}.push_back({val});"]
+
+
 def condition_to_cpp(step_as, ctx):
     """Convert condition_yaml to C++ expression string."""
     condition_yaml = step_as.get("condition_yaml", "")
@@ -83,6 +89,11 @@ def gen_if(step_as, ctx):
     then_step = step_as.get("then", "")
     if then_step:
         body = generate_chain(then_step, ctx)
+        lines.extend(indent(body))
+    else_step = step_as.get("else", "")
+    if else_step:
+        lines.append("} else {")
+        body = generate_chain(else_step, ctx)
         lines.extend(indent(body))
     lines.append("}")
     return lines
@@ -183,6 +194,7 @@ def gen_return(step_as, ctx):
 
 STEP_GENERATORS = {
     "computer/algorithm/assign": gen_assign,
+    "computer/algorithm/append": gen_append,
     "computer/algorithm/assign_indexed": gen_assign_indexed,
     "computer/algorithm/if": gen_if,
     "computer/algorithm/call": gen_call,

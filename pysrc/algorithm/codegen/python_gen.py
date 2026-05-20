@@ -97,6 +97,12 @@ def gen_assign(step_as, ctx):
     return [f"{var} = {frm}"]
 
 
+def gen_append(step_as, ctx):
+    lst = step_as.get("list", "")
+    val = _translate_python(step_as.get("value", ""))
+    return [f"{lst}.append({val})"]
+
+
 def gen_assign_indexed(step_as, ctx):
     container = _translate_python(step_as.get("container", ""))
     index = _translate_python(step_as.get("index", ""))
@@ -121,6 +127,12 @@ def gen_if(step_as, ctx):
     then_step = step_as.get("then", "")
     if then_step:
         body = generate_chain(then_step, ctx)
+        lines.extend(indent(body))
+
+    else_step = step_as.get("else", "")
+    if else_step:
+        lines.append("else:")
+        body = generate_chain(else_step, ctx)
         lines.extend(indent(body))
 
     return lines
@@ -214,6 +226,7 @@ def gen_return(step_as, ctx):
 
 STEP_GENERATORS = {
     "computer/algorithm/assign": gen_assign,
+    "computer/algorithm/append": gen_append,
     "computer/algorithm/assign_indexed": gen_assign_indexed,
     "computer/algorithm/if": gen_if,
     "computer/algorithm/call": gen_call,

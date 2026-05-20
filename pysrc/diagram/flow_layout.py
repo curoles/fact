@@ -3,6 +3,7 @@ from diagram.layout import Layout
 
 STEP_SHAPES = {
     "computer/algorithm/assign": "rect",
+    "computer/algorithm/append": "rect",
     "computer/algorithm/assign_indexed": "rect",
     "computer/algorithm/if": "diamond",
     "computer/algorithm/while": "hexagon",
@@ -161,6 +162,10 @@ class FlowLayout(Layout):
             var = step_as.get("variable", "")
             frm = step_as.get("from", "")
             return f"{var} = {frm}"
+        if step_type == "computer/algorithm/append":
+            lst = step_as.get("list", "")
+            val = step_as.get("value", "")
+            return f"{lst}.add({val})"
         if step_type == "computer/algorithm/if":
             desc = step_as.get("description", "")
             if desc:
