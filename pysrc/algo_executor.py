@@ -172,9 +172,10 @@ class AlgorithmExecutor:
             end = len(arr)
         else:
             end = int(self._resolve_value(step_as.get("to", 0), variables))
+        stride_val = int(self._resolve_value(step_as.get("stride", 1), variables))
         body_step = step_as.get("body", "")
 
-        for i in range(from_val, end):
+        for i in range(from_val, end, stride_val):
             variables[index_name] = i
             if body_step and body_step in steps:
                 self._execute_step(body_step, steps, variables)
