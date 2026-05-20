@@ -174,6 +174,8 @@ def gen_call(step_as, ctx):
 
 def gen_return(step_as, ctx):
     var = step_as.get("variable", "")
+    if ctx.get("return_type") == "void":
+        return []
     return [f"return {var};"]
 
 
@@ -261,23 +263,46 @@ def generate_cpp(kg, algo_path):
             if idx:
                 loop_indices.add(idx)
 
-    # collect declared variables — pre-declare at top to avoid scope issues
-    variables = [attr for attr, val in has.items()
-                 if val.get("type") == "math/variable" and attr not in loop_indices]
+    # collect declared variables, determine type (T vs int) from description
+    INDEX_HINTS = {"index", "bound", "position", "next"}
+    variables = []
+    var_types = {}
+    for attr, val in has.items():
+        if val.get("type") != "math/variable" or attr in loop_indices:
+            continue
+        variables.append(attr)
+        desc = val.get("val_as", {}).get("math/variable", {}).get("description", "").lower()
+        if any(hint in desc for hint in INDEX_HINTS):
+            var_types[attr] = "int"
+        else:
+            var_types[attr] = "T"
     declared = set(variables) | loop_indices
 
-    ctx = {"kg": kg, "steps": steps, "declared": declared}
+    # determine return type
+    return_type = "T"
+    for attr, val in steps.items():
+        step_type = val.get("type", "")
+        if step_type == "computer/algorithm/return":
+            ret_var = val.get("val_as", {}).get(step_type, {}).get("variable", "")
+            if ret_var in var_types:
+                return_type = var_types[ret_var]
+            elif ret_var in [a for a, v in has.items() if v.get("type") == "list"]:
+                return_type = "void"
+
+    ctx = {"kg": kg, "steps": steps, "declared": declared, "return_type": return_type}
 
     # generate function
     lines = []
     if description:
         lines.append(f"// {description}")
-    lines.append("template<typename T>")
-    lines.append(f"auto {func_name}({', '.join(params)}) {{")
 
-    # declare all variables at function scope
+    lines.append("template<typename T>")
+    lines.append(f"{return_type} {func_name}({', '.join(params)}) {{")
+
+    # declare all variables at function scope with correct types
     for var in variables:
-        lines.extend(indent([f"T {var} = {{}};"]))
+        vtype = var_types.get(var, "T")
+        lines.extend(indent([f"{vtype} {var} = {{}};"]))
 
     body = generate_chain(first_step, ctx)
     lines.extend(indent(body))
