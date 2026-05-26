@@ -303,3 +303,77 @@ For deployment: server clones repos on startup.
 
 Design the server with this in mind from the start — roots should be
 configurable, not hardcoded. Implement when refactoring to Jinja2 templates.
+
+## Rationale as knowledge — reasoning patterns in KGs
+
+### The idea
+
+Most KGs store conclusions. Ours can store the reasoning that led to
+conclusions — via `knowledge/rationale`. Example: Euler's 1770 intuitive
+argument for why positive × negative = negative, alongside the modern
+formal derivation from the distributive property.
+
+With enough rationales, an AI could learn reasoning *patterns* — not just
+facts, but how to think. The same pattern ("reducing input reduces output")
+appears in algebra, thermodynamics, economics. Recognizing and transferring
+these patterns is analogical reasoning.
+
+### Existing systems (from research)
+
+**OMDoc** (Kohlhase) — structured math with explicit proof steps and WHY.
+XML-based with object/statement/theory layers. Closest to our approach.
+Failed because authoring overhead was too high for working mathematicians.
+
+**NEOMYCIN** (Clancey, 1987) — separated diagnostic strategy (HOW to
+think) from domain knowledge (WHAT to know). Explicitly represented
+meta-reasoning. Genuine rationale ontology. Didn't scale — hand-authored.
+
+**Walton's Argumentation Schemes** — ~60 reusable reasoning patterns:
+"argument from analogy," "argument from expert opinion," "argument from
+cause to effect." Implemented in tools (Araucaria, OVA). The **AIF**
+(Argument Interchange Format) standardized the graph schema. **AIFdb**
+corpus has thousands of annotated arguments. Limitation: manual annotation.
+
+**SME (Structure Mapping Engine)** (Gentner & Forbus, Northwestern) —
+transfers reasoning between domains by matching relational structure.
+Still active. Taught to solve AP physics by analogy to worked examples.
+
+**ThoughtSource** (2023, Nature Scientific Data) — aggregated chain-of-
+thought reasoning datasets for LLM training. Structured reasoning traces
+with step labels.
+
+**Mizar Mathematical Library** — 60,000 theorems with readable formal
+proofs. Enabled automated premise selection (learning which lemmas help).
+Genuine discovery from rationale structure.
+
+### The capture problem
+
+**Every rationale system failed because recording rationale costs more
+than it benefits the recorder.** Systems that succeeded (Mizar, MYCIN)
+had rationale as a byproduct of the primary task, not an add-on.
+
+**For our system:** Rationale should emerge naturally. When we write
+algorithm steps + descriptions + constraints, the rationale is partially
+there. When we capture Euler's argument, it's because we're reading Euler,
+not because a system demands it. YAML-in-YAML is low friction — add
+what's useful, skip what's not.
+
+### Possible direction: reasoning scheme types
+
+Walton's argumentation schemes as fact types:
+
+```
+knowledge/reasoning/scheme.yaml                    — base type
+knowledge/reasoning/scheme/argument_from_analogy.yaml
+knowledge/reasoning/scheme/monotonic_argument.yaml
+knowledge/reasoning/scheme/proof_by_contradiction.yaml
+knowledge/reasoning/scheme/reduction_to_known.yaml
+```
+
+Then rationales reference which scheme they use. The sign rule's Euler
+argument uses "monotonic_argument" scheme. This makes reasoning patterns
+searchable: "find all rationales that use argument from analogy."
+
+This is the bridge between storing rationales (easy, low friction) and
+enabling analogical reasoning at scale (hard, research-level). The
+schemes are the indexing layer that makes rationales machine-searchable.

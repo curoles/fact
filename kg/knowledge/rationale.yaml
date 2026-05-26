@@ -1,0 +1,4 @@
+- is: knowledge rationale
+- has:
+    rationale_yaml:
+      type: str

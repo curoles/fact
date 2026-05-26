@@ -186,7 +186,11 @@ class AlgorithmExecutor:
         container = step_as.get("container", "")
         idx = int(self._resolve_value(step_as.get("index", ""), variables))
         val = self._resolve_value(step_as.get("from", ""), variables)
-        variables[container][idx] = val
+        if "." in container:
+            arr = self._resolve_dot(container, variables)
+        else:
+            arr = variables[container]
+        arr[idx] = val
 
     def _exec_swap(self, step_as, variables):
         arr_name = step_as.get("array", "")
